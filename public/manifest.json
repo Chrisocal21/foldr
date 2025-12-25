@@ -1,0 +1,11 @@
+{
+  "name": "Foldr",
+  "short_name": "Foldr",
+  "description": "Your trip-based information hub",
+  "start_url": "/trips",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": []
+}
