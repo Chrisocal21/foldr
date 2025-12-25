@@ -3,8 +3,8 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trip, Block } from '@/lib/types'
-import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock } from '@/lib/storage'
+import { Trip, Block, Todo } from '@/lib/types'
+import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, getTodos, toggleTodo, deleteTodo } from '@/lib/storage'
 import { BlockCard } from '@/components/BlockCard'
 import { exportTripToPDF } from '@/lib/pdf-export'
 
@@ -14,6 +14,12 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [trip, setTrip] = useState<Trip | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
   const [showMenu, setShowMenu] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [editingDates, setEditingDates] = useState(false)
+  const [titleValue, setTitleValue] = useState('')
+  const [startDateValue, setStartDateValue] = useState('')
+  const [endDateValue, setEndDateValue] = useState('')
+  const [todos, setTodos] = useState<Todo[]>([])
 
   useEffect(() => {
     loadTripData()
@@ -26,7 +32,40 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       return
     }
     setTrip(tripData)
+    setTitleValue(tripData.name)
+    setStartDateValue(tripData.startDate)
+    setEndDateValue(tripData.endDate)
     setBlocks(getBlocksByTripId(id))
+    // Load todos tagged to this trip
+    setTodos(getTodos().filter(t => t.tripIds.includes(id)))
+  }
+
+  const handleToggleTripTodo = (todoId: string) => {
+    toggleTodo(todoId)
+    setTodos(getTodos().filter(t => t.tripIds.includes(id)))
+  }
+
+  const handleDeleteTripTodo = (todoId: string) => {
+    deleteTodo(todoId)
+    setTodos(getTodos().filter(t => t.tripIds.includes(id)))
+  }
+
+  const handleSaveTitle = () => {
+    if (trip && titleValue.trim()) {
+      const updatedTrip = { ...trip, name: titleValue.trim() }
+      saveTrip(updatedTrip)
+      setTrip(updatedTrip)
+      setEditingTitle(false)
+    }
+  }
+
+  const handleSaveDates = () => {
+    if (trip && startDateValue && endDateValue) {
+      const updatedTrip = { ...trip, startDate: startDateValue, endDate: endDateValue }
+      saveTrip(updatedTrip)
+      setTrip(updatedTrip)
+      setEditingDates(false)
+    }
   }
 
   const handleDelete = () => {
@@ -124,19 +163,80 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       <main className="container mx-auto px-4 py-8 max-w-3xl">
         {/* Trip Header */}
         <div className="mb-8">
-          <div className="flex items-start justify-between mb-4">
-            <h1 className="text-3xl font-bold text-white">{trip.name}</h1>
-            <span className={`text-xs px-3 py-1 rounded ${statusColors[trip.status]} text-white font-medium`}>
-              {statusLabels[trip.status]}
-            </span>
+          <div className="flex flex-col gap-2 mb-4">
+            {editingTitle ? (
+              <div className="flex flex-col gap-2">
+                <input
+                  type="text"
+                  value={titleValue}
+                  onChange={(e) => setTitleValue(e.target.value)}
+                  className="text-2xl font-bold text-white bg-slate-800 border border-slate-600 rounded px-3 py-2 w-full"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+                />
+                <div className="flex gap-2">
+                  <button onClick={handleSaveTitle} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded transition-colors">
+                    Save
+                  </button>
+                  <button onClick={() => { setEditingTitle(false); setTitleValue(trip.name); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-2">
+                <h1
+                  className="text-2xl font-bold text-white cursor-pointer hover:text-blue-400 transition-colors flex-1"
+                  onClick={() => setEditingTitle(true)}
+                  title="Tap to edit"
+                >
+                  {trip.name}
+                </h1>
+                <span className={`text-xs px-3 py-1 rounded ${statusColors[trip.status]} text-white font-medium shrink-0`}>
+                  {statusLabels[trip.status]}
+                </span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-2 text-slate-300">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
-            <span>{formatDate(trip.startDate)} – {formatDate(trip.endDate)}</span>
-          </div>
+          {editingDates ? (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={startDateValue}
+                  onChange={(e) => setStartDateValue(e.target.value)}
+                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"
+                />
+                <span className="text-slate-400">–</span>
+                <input
+                  type="date"
+                  value={endDateValue}
+                  onChange={(e) => setEndDateValue(e.target.value)}
+                  className="flex-1 bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button onClick={handleSaveDates} className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 rounded transition-colors">
+                  Save
+                </button>
+                <button onClick={() => { setEditingDates(false); setStartDateValue(trip.startDate); setEndDateValue(trip.endDate); }} className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-blue-400 transition-colors"
+              onClick={() => setEditingDates(true)}
+              title="Tap to edit"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              <span>{formatDate(trip.startDate)} – {formatDate(trip.endDate)}</span>
+            </div>
+          )}
         </div>
 
         {/* Add Block Button */}
@@ -146,6 +246,52 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         >
           + Add Block
         </Link>
+
+        {/* To-Dos for this trip */}
+        {todos.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M9 12l2 2 4-4" />
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+              </svg>
+              To Do
+            </h2>
+            <ul className="space-y-2">
+              {todos.filter(t => !t.completed).map(todo => (
+                <li key={todo.id} className="flex items-center gap-3 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
+                  <button onClick={() => handleToggleTripTodo(todo.id)} className="text-slate-400 hover:text-green-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                  </button>
+                  <span className="flex-1 text-white">{todo.text}</span>
+                  <button onClick={() => handleDeleteTripTodo(todo.id)} className="text-slate-500 hover:text-red-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+              {todos.filter(t => t.completed).map(todo => (
+                <li key={todo.id} className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-3 border border-slate-700/50 opacity-60">
+                  <button onClick={() => handleToggleTripTodo(todo.id)} className="text-green-400">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M9 12l2 2 4-4" />
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                  </button>
+                  <span className="flex-1 text-slate-400 line-through">{todo.text}</span>
+                  <button onClick={() => handleDeleteTripTodo(todo.id)} className="text-slate-500 hover:text-red-400">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Timeline */}
         {blocks.length === 0 ? (

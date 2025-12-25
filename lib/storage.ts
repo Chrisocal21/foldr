@@ -1,7 +1,8 @@
-import { Trip, Block, TripStatus } from './types'
+import { Trip, Block, TripStatus, Todo } from './types'
 
 const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
+const TODOS_KEY = 'foldr_todos'
 
 // Trips
 export function getTrips(): Trip[] {
@@ -115,6 +116,41 @@ export function reorderBlocks(tripId: string, blockId: string, direction: 'up' |
   
   // Save all blocks
   localStorage.setItem(BLOCKS_KEY, JSON.stringify([...otherBlocks, ...tripBlocks]))
+}
+
+// Todos
+export function getTodos(): Todo[] {
+  if (typeof window === 'undefined') return []
+  const data = localStorage.getItem(TODOS_KEY)
+  return data ? JSON.parse(data) : []
+}
+
+export function saveTodo(todo: Todo): void {
+  const todos = getTodos()
+  const index = todos.findIndex(t => t.id === todo.id)
+  
+  if (index >= 0) {
+    todos[index] = { ...todo, updatedAt: new Date().toISOString() }
+  } else {
+    todos.push(todo)
+  }
+  
+  localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+}
+
+export function deleteTodo(todoId: string): void {
+  const todos = getTodos().filter(t => t.id !== todoId)
+  localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+}
+
+export function toggleTodo(todoId: string): void {
+  const todos = getTodos()
+  const index = todos.findIndex(t => t.id === todoId)
+  if (index >= 0) {
+    todos[index].completed = !todos[index].completed
+    todos[index].updatedAt = new Date().toISOString()
+    localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+  }
 }
 
 // Search

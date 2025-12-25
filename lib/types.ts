@@ -96,3 +96,12 @@ export interface NoteBlock extends BaseBlock {
 }
 
 export type Block = FlightBlock | HotelBlock | LayoverBlock | WorkBlock | TransportBlock | ScreenshotBlock | NoteBlock
+
+export interface Todo {
+  id: string
+  text: string
+  completed: boolean
+  tripIds: string[] // empty array means "all trips" / general
+  createdAt: string
+  updatedAt: string
+}
