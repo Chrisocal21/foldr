@@ -5,10 +5,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     return res.status(405).end();
   }
   const { username, password } = req.body;
-  // Use process.env for credentials
+  // Use server-side env vars (no NEXT_PUBLIC_ prefix for security)
   if (
-    username === process.env.NEXT_PUBLIC_APP_USER &&
-    password === process.env.NEXT_PUBLIC_APP_PASS
+    username === process.env.APP_USER &&
+    password === process.env.APP_PASS
   ) {
     // In a real app, set a secure cookie or JWT here
     res.status(200).json({ success: true });
