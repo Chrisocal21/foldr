@@ -69,9 +69,13 @@ export default function TripsPage() {
             </Link>
             <Link
               href="/trips/new"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              title="New Trip"
             >
-              + New Trip
+              <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v8M8 12h8" />
+              </svg>
             </Link>
           </div>
         </div>

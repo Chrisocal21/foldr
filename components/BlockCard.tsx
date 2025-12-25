@@ -10,6 +10,84 @@ interface BlockCardProps {
   isLast?: boolean
 }
 
+// Helper to get block icon and color
+function getBlockMeta(type: Block['type']) {
+  switch (type) {
+    case 'flight':
+      return { color: 'blue', icon: (
+        <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z" />
+        </svg>
+      )}
+    case 'hotel':
+      return { color: 'purple', icon: (
+        <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M3 21h18M4 21V7a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v14M14 21V10a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v11" />
+        </svg>
+      )}
+    case 'layover':
+      return { color: 'yellow', icon: (
+        <svg className="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+        </svg>
+      )}
+    case 'work':
+      return { color: 'orange', icon: (
+        <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+      )}
+    case 'transport':
+      return { color: 'green', icon: (
+        <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M5 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
+          <path d="M5 17H3v-5l2-5h9l4 5v5h-2m-7-9 1.5 4.5H9L7.5 8Z" />
+        </svg>
+      )}
+    case 'screenshot':
+      return { color: 'indigo', icon: (
+        <svg className="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z" />
+          <circle cx="12" cy="13" r="3" />
+        </svg>
+      )}
+    case 'note':
+      return { color: 'slate', icon: (
+        <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2Z" />
+          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+        </svg>
+      )}
+    default:
+      return { color: 'slate', icon: null }
+  }
+}
+
+// Helper to get block summary for collapsed view
+function getBlockSummary(block: Block): { title: string; subtitle: string } {
+  switch (block.type) {
+    case 'flight':
+      return { 
+        title: 'Flight', 
+        subtitle: `${block.airline} ${block.flightNumber} · ${block.departureAirport} → ${block.arrivalAirport}` 
+      }
+    case 'hotel':
+      return { title: 'Hotel', subtitle: block.name }
+    case 'layover':
+      return { title: 'Layover', subtitle: block.location }
+    case 'work':
+      return { title: 'Work', subtitle: block.siteName }
+    case 'transport':
+      return { title: 'Transport', subtitle: `${block.transportType} · ${block.pickupLocation}` }
+    case 'screenshot':
+      return { title: 'Screenshot', subtitle: block.caption || 'Image' }
+    case 'note':
+      return { title: 'Note', subtitle: block.title || block.text.slice(0, 50) + (block.text.length > 50 ? '...' : '') }
+    default:
+      return { title: 'Block', subtitle: '' }
+  }
+}
+
 export function BlockCard({ 
   block, 
   onDelete, 
@@ -17,6 +95,10 @@ export function BlockCard({
   isLast
 }: BlockCardProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  const meta = getBlockMeta(block.type)
+  const summary = getBlockSummary(block)
 
   const renderBlockContent = () => {
     switch (block.type) {
@@ -37,6 +119,76 @@ export function BlockCard({
       default:
         return null
     }
+  }
+
+  // Collapsed view - just the header
+  if (isCollapsed) {
+    return (
+      <div className="relative group">
+        <div 
+          onClick={() => setIsCollapsed(false)}
+          className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
+        >
+          <div className={`bg-${meta.color}-600/20 p-1.5 rounded-lg`}>
+            {meta.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <span className="text-white font-medium">{summary.title}</span>
+            <span className="text-slate-500 mx-2">·</span>
+            <span className="text-slate-400 text-sm truncate">{summary.subtitle}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowMenu(!showMenu)
+              }}
+              className="text-slate-500 hover:text-slate-300 p-1 transition-colors"
+              title="More options"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="12" cy="6" r="1" fill="currentColor" />
+                <circle cx="12" cy="12" r="1" fill="currentColor" />
+                <circle cx="12" cy="18" r="1" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+          
+          {showMenu && (
+            <div className="absolute right-2 top-12 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden min-w-[120px] z-20">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsCollapsed(false)
+                  setShowMenu(false)
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Expand
+              </button>
+              <Link
+                href={`/trips/${block.tripId}/edit-block/${block.id}`}
+                className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Edit
+              </Link>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (confirm('Are you sure you want to delete this block?')) {
+                    onDelete?.(block.id)
+                  }
+                  setShowMenu(false)
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -61,6 +213,16 @@ export function BlockCard({
           
           {showMenu && (
             <div className="absolute right-0 mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden min-w-[120px]">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsCollapsed(true)
+                  setShowMenu(false)
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Minimize
+              </button>
               <Link
                 href={`/trips/${block.tripId}/edit-block/${block.id}`}
                 className="block px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"

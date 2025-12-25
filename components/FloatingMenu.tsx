@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import Link from 'next/link';
+import { getTodos, toggleTodo, deleteTodo, saveTodo, getTrips } from '@/lib/storage';
 
 interface FloatingMenuProps {
   // For trip pages - shows trip-specific todos
@@ -161,18 +162,15 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
     onFullscreenChange(newValue);
   };
 
-  // Import storage functions dynamically to avoid issues
-  const { getTodos, toggleTodo, deleteTodo, saveTodo, getTrips } = require('@/lib/storage');
-  
-  useState(() => {
+  useEffect(() => {
     setTodos(getTodos());
     setTrips(getTrips());
-  });
+  }, []);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setTodos(getTodos());
     setTrips(getTrips());
-  };
+  }, []);
 
   const handleToggle = (todoId: string) => {
     toggleTodo(todoId);
@@ -369,15 +367,13 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
     onFullscreenChange(newValue);
   };
 
-  const { getTodos, toggleTodo, deleteTodo, saveTodo } = require('@/lib/storage');
-
-  useState(() => {
+  useEffect(() => {
     setTodos(getTodos().filter((t: any) => t.tripIds.includes(tripId)));
-  });
+  }, [tripId]);
 
-  const loadTodos = () => {
+  const loadTodos = useCallback(() => {
     setTodos(getTodos().filter((t: any) => t.tripIds.includes(tripId)));
-  };
+  }, [tripId]);
 
   const handleToggle = (todoId: string) => {
     toggleTodo(todoId);
