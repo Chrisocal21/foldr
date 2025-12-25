@@ -40,7 +40,17 @@ export default function Home() {
             const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
             if (res.ok) {
               const data = await res.json();
-              setPlace(data.display_name || null);
+              // Extract just city and state
+              const addr = data.address || {};
+              const city = addr.city || addr.town || addr.village || addr.municipality || '';
+              const state = addr.state || '';
+              if (city && state) {
+                setPlace(`${city}, ${state}`);
+              } else if (city || state) {
+                setPlace(city || state);
+              } else {
+                setPlace(null);
+              }
             } else {
               setPlace(null);
             }
@@ -128,22 +138,33 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950 flex flex-col">
-      {/* Top Bar: Title, Clock, Date, Location, Trips Icon */}
-      <div className="flex items-center justify-between px-6 py-4 bg-slate-950/80 border-b border-slate-800">
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-1">Foldr</h1>
-          <div className="text-xl font-mono text-white">{now.toLocaleTimeString()}</div>
-          <div className="text-slate-400 text-sm">{now.toLocaleDateString()}</div>
-          <div className="text-slate-500 text-xs">
-            {place ? place : location || '...'}
-          </div>
+      {/* Top Bar: Logo, Clock, Date, Location, Trips Icon */}
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-950/80 border-b border-slate-800">
+        <div className="flex items-center gap-3">
+          <img 
+            src="/logos/LOGO V2-1.png" 
+            alt="Foldr" 
+            className="h-12 w-auto"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              target.insertAdjacentHTML('afterend', '<span class="text-2xl font-bold" style="color: #6B9AE8">Foldr</span>');
+            }}
+          />
         </div>
-        <Link href="/trips" className="p-2 rounded-full hover:bg-slate-800 transition-colors" title="Trips">
-          <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <rect x="4" y="4" width="16" height="16" rx="4" />
-            <path d="M12 8v8M8 12h8" />
-          </svg>
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <div className="text-xl font-mono text-white leading-tight">{now.toLocaleTimeString()}</div>
+            <div className="text-xs text-slate-400">{now.toLocaleDateString()}</div>
+            <div className="text-xs text-slate-500">{place ? place : location || '...'}</div>
+          </div>
+          <Link href="/trips" className="p-2 rounded-full hover:bg-slate-800 transition-colors" title="Trips">
+            <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="4" y="4" width="16" height="16" rx="4" />
+              <path d="M12 8v8M8 12h8" />
+            </svg>
+          </Link>
+        </div>
       </div>
 
       {/* Middle: Today's Trips */}

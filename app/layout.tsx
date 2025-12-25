@@ -26,6 +26,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/logos/favicon.ico" sizes="any" />
+        <link rel="icon" href="/logos/icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logos/apple-touch-icon.png" />
+      </head>
       <body className="bg-slate-900">{children}</body>
     </html>
   )
