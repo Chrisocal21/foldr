@@ -33,39 +33,46 @@ export default function TripsPage() {
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="text-xl font-bold text-white">
-              Foldr
+        <div className="container mx-auto px-4 py-5 flex items-center justify-between">
+          <Link href="/">
+            <img 
+              src="/logos/logo.png" 
+              alt="Foldr" 
+              className="h-12 w-auto"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.style.display = 'none';
+                target.insertAdjacentHTML('afterend', '<span class="text-2xl font-bold" style="color: #6B9AE8">Foldr</span>');
+              }}
+            />
+          </Link>
+          <div className="flex items-center gap-5">
+            <Link
+              href="/calendar"
+              className="text-slate-300 hover:text-white p-2"
+              title="Calendar View"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
             </Link>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/calendar"
-                className="text-slate-300 hover:text-white"
-                title="Calendar View"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <rect x="3" y="4" width="18" height="18" rx="2" />
-                  <path d="M16 2v4M8 2v4M3 10h18" />
-                </svg>
-              </Link>
-              <Link
-                href="/search"
-                className="text-slate-300 hover:text-white"
-                title="Search"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-              </Link>
-              <Link
-                href="/trips/new"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              >
-                + New Trip
-              </Link>
-            </div>
+            <Link
+              href="/search"
+              className="text-slate-300 hover:text-white p-2"
+              title="Search"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.35-4.35" />
+              </svg>
+            </Link>
+            <Link
+              href="/trips/new"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              + New Trip
+            </Link>
           </div>
         </div>
       </header>

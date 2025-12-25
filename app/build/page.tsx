@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import FloatingMenu from '@/components/FloatingMenu';
 
 export default function BuildPage() {
   const currentFeatures = [
@@ -132,22 +133,22 @@ export default function BuildPage() {
       case 'in-progress':
         return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'planned':
-        return 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30';
+        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
       default:
-        return 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30';
+        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
     }
   };
 
   return (
-    <div className="min-h-screen bg-black text-white p-4 pb-20">
+    <div className="min-h-screen bg-slate-950 text-white p-4 pb-20">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
-        <Link href="/" className="text-zinc-400 hover:text-white text-2xl">
+        <Link href="/" className="text-slate-400 hover:text-white text-2xl">
           ←
         </Link>
         <div>
           <h1 className="text-2xl font-bold">Build Spec</h1>
-          <p className="text-zinc-500 text-sm">Technical documentation</p>
+          <p className="text-slate-500 text-sm">Technical documentation</p>
         </div>
       </div>
 
@@ -157,17 +158,17 @@ export default function BuildPage() {
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           <span className="text-green-400 font-medium">Live</span>
         </div>
-        <p className="text-zinc-300 mt-1">Deployed at foldr-chrisoc.vercel.app</p>
+        <p className="text-slate-300 mt-1">Deployed at foldr-chrisoc.vercel.app</p>
       </div>
 
       {/* Tech Stack */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-zinc-300 mb-3">Tech Stack</h2>
+        <h2 className="text-lg font-semibold text-slate-300 mb-3">Tech Stack</h2>
         <div className="grid grid-cols-2 gap-2">
           {techStack.map((tech) => (
-            <div key={tech.name} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800">
+            <div key={tech.name} className="bg-slate-900 rounded-lg p-3 border border-slate-800">
               <p className="font-medium text-white">{tech.name}</p>
-              <p className="text-xs text-zinc-500">{tech.desc}</p>
+              <p className="text-xs text-slate-500">{tech.desc}</p>
             </div>
           ))}
         </div>
@@ -175,14 +176,14 @@ export default function BuildPage() {
 
       {/* Current Features */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-zinc-300 mb-3">✅ Implemented Features</h2>
+        <h2 className="text-lg font-semibold text-slate-300 mb-3">✅ Implemented Features</h2>
         <div className="space-y-4">
           {currentFeatures.map((section) => (
-            <div key={section.category} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+            <div key={section.category} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
               <h3 className="font-semibold text-green-400 mb-2">{section.category}</h3>
               <ul className="space-y-1">
                 {section.items.map((item, i) => (
-                  <li key={i} className="text-sm text-zinc-400 flex items-start gap-2">
+                  <li key={i} className="text-sm text-slate-400 flex items-start gap-2">
                     <span className="text-green-500 mt-0.5">✓</span>
                     <span dangerouslySetInnerHTML={{ __html: item }} />
                   </li>
@@ -195,21 +196,21 @@ export default function BuildPage() {
 
       {/* Development Phases */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-zinc-300 mb-3">Development Phases</h2>
+        <h2 className="text-lg font-semibold text-slate-300 mb-3">Development Phases</h2>
         <div className="space-y-4">
           {phases.map((phase) => (
-            <div key={phase.phase} className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+            <div key={phase.phase} className="bg-slate-900 rounded-xl p-4 border border-slate-800">
               <div className="flex items-center gap-2 mb-2">
                 <span className={`text-xs px-2 py-0.5 rounded-full border ${getStatusBadge(phase.status)}`}>
                   {phase.status === 'complete' ? '✅ Complete' : phase.status === 'in-progress' ? '🔨 In Progress' : '📋 Planned'}
                 </span>
                 <span className="font-semibold text-white">{phase.phase}</span>
               </div>
-              <h3 className="text-zinc-300 font-medium mb-2">{phase.title}</h3>
+              <h3 className="text-slate-300 font-medium mb-2">{phase.title}</h3>
               <ul className="space-y-1">
                 {phase.items.map((item, i) => (
-                  <li key={i} className="text-sm text-zinc-500 flex items-start gap-2">
-                    <span className="text-zinc-600">•</span>
+                  <li key={i} className="text-sm text-slate-500 flex items-start gap-2">
+                    <span className="text-slate-600">•</span>
                     {item}
                   </li>
                 ))}
@@ -221,34 +222,34 @@ export default function BuildPage() {
 
       {/* Core Principles */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-zinc-300 mb-3">Core Principles</h2>
+        <h2 className="text-lg font-semibold text-slate-300 mb-3">Core Principles</h2>
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
             <p className="text-xl mb-1">📴</p>
             <p className="font-semibold text-white text-sm">Offline-first</p>
-            <p className="text-xs text-zinc-500">Works on plane, in Uber</p>
+            <p className="text-xs text-slate-500">Works on plane, in Uber</p>
           </div>
-          <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
             <p className="text-xl mb-1">👀</p>
             <p className="font-semibold text-white text-sm">Glanceable</p>
-            <p className="text-xs text-zinc-500">Key info visible immediately</p>
+            <p className="text-xs text-slate-500">Key info visible immediately</p>
           </div>
-          <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
             <p className="text-xl mb-1">📋</p>
             <p className="font-semibold text-white text-sm">Copy-friendly</p>
-            <p className="text-xs text-zinc-500">Tap any field to copy</p>
+            <p className="text-xs text-slate-500">Tap any field to copy</p>
           </div>
-          <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
             <p className="text-xl mb-1">✨</p>
             <p className="font-semibold text-white text-sm">Minimal UI</p>
-            <p className="text-xs text-zinc-500">Clean, functional, no fluff</p>
+            <p className="text-xs text-slate-500">Clean, functional, no fluff</p>
           </div>
         </div>
       </div>
 
       {/* Block Types Reference */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-zinc-300 mb-3">Block Types</h2>
+        <h2 className="text-lg font-semibold text-slate-300 mb-3">Block Types</h2>
         <div className="space-y-3">
           {[
             { icon: '✈️', name: 'Flight', fields: 'Airline, Flight #, Date, Times, Airports, Confirmation, Seat, Gate' },
@@ -259,11 +260,11 @@ export default function BuildPage() {
             { icon: '📸', name: 'Screenshot', fields: 'Image, Caption, Date' },
             { icon: '📝', name: 'Note', fields: 'Title, Text, Date/Time' },
           ].map((block) => (
-            <div key={block.name} className="bg-zinc-900 rounded-lg p-3 border border-zinc-800 flex items-start gap-3">
+            <div key={block.name} className="bg-slate-900 rounded-lg p-3 border border-slate-800 flex items-start gap-3">
               <span className="text-xl">{block.icon}</span>
               <div>
                 <p className="font-medium text-white">{block.name}</p>
-                <p className="text-xs text-zinc-500">{block.fields}</p>
+                <p className="text-xs text-slate-500">{block.fields}</p>
               </div>
             </div>
           ))}
@@ -272,8 +273,8 @@ export default function BuildPage() {
 
       {/* Future Ideas */}
       <div className="mb-8">
-        <h2 className="text-lg font-semibold text-zinc-300 mb-3">🅿️ Parking Lot</h2>
-        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800">
+        <h2 className="text-lg font-semibold text-slate-300 mb-3">🅿️ Parking Lot</h2>
+        <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
           <div className="flex flex-wrap gap-2">
             {[
               'Terminal maps',
@@ -283,7 +284,7 @@ export default function BuildPage() {
               'Expense tracking',
               'Airline/hotel integrations',
             ].map((idea) => (
-              <span key={idea} className="text-xs bg-zinc-800 text-zinc-400 px-2 py-1 rounded">
+              <span key={idea} className="text-xs bg-slate-800 text-slate-400 px-2 py-1 rounded">
                 {idea}
               </span>
             ))}
@@ -295,19 +296,22 @@ export default function BuildPage() {
       <div className="flex gap-3">
         <Link 
           href="/roadmap" 
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center hover:bg-zinc-800 transition-colors"
+          className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 text-center hover:bg-slate-800 transition-colors"
         >
           <p className="text-lg mb-1">🗺️</p>
           <p className="text-sm font-medium">Roadmap</p>
         </Link>
         <Link 
           href="/" 
-          className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-4 text-center hover:bg-zinc-800 transition-colors"
+          className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-4 text-center hover:bg-slate-800 transition-colors"
         >
           <p className="text-lg mb-1">🏠</p>
           <p className="text-sm font-medium">Home</p>
         </Link>
       </div>
+
+      {/* Floating Menu */}
+      <FloatingMenu hideLinks={['build']} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import FloatingMenu from '@/components/FloatingMenu'
 
 export default function RoadmapPage() {
   return (
@@ -108,6 +109,9 @@ export default function RoadmapPage() {
           </div>
         </section>
       </main>
+
+      {/* Floating Menu */}
+      <FloatingMenu hideLinks={['roadmap']} />
     </div>
   )
 }
@@ -143,3 +147,5 @@ function CompletedItem({ text }: { text: string }) {
     </div>
   )
 }
+
+// Dev Notes component is rendered at end of RoadmapPage

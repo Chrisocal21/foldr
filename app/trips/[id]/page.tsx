@@ -3,10 +3,11 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trip, Block, Todo } from '@/lib/types'
-import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, getTodos, toggleTodo, deleteTodo } from '@/lib/storage'
+import { Trip, Block } from '@/lib/types'
+import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip } from '@/lib/storage'
 import { BlockCard } from '@/components/BlockCard'
 import { exportTripToPDF } from '@/lib/pdf-export'
+import FloatingMenu from '@/components/FloatingMenu'
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -19,7 +20,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [titleValue, setTitleValue] = useState('')
   const [startDateValue, setStartDateValue] = useState('')
   const [endDateValue, setEndDateValue] = useState('')
-  const [todos, setTodos] = useState<Todo[]>([])
 
   useEffect(() => {
     loadTripData()
@@ -36,18 +36,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     setStartDateValue(tripData.startDate)
     setEndDateValue(tripData.endDate)
     setBlocks(getBlocksByTripId(id))
-    // Load todos tagged to this trip
-    setTodos(getTodos().filter(t => t.tripIds.includes(id)))
-  }
-
-  const handleToggleTripTodo = (todoId: string) => {
-    toggleTodo(todoId)
-    setTodos(getTodos().filter(t => t.tripIds.includes(id)))
-  }
-
-  const handleDeleteTripTodo = (todoId: string) => {
-    deleteTodo(todoId)
-    setTodos(getTodos().filter(t => t.tripIds.includes(id)))
   }
 
   const handleSaveTitle = () => {
@@ -247,52 +235,6 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           + Add Block
         </Link>
 
-        {/* To-Dos for this trip */}
-        {todos.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M9 12l2 2 4-4" />
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-              </svg>
-              To Do
-            </h2>
-            <ul className="space-y-2">
-              {todos.filter(t => !t.completed).map(todo => (
-                <li key={todo.id} className="flex items-center gap-3 bg-slate-800 rounded-lg px-4 py-3 border border-slate-700">
-                  <button onClick={() => handleToggleTripTodo(todo.id)} className="text-slate-400 hover:text-green-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  </button>
-                  <span className="flex-1 text-white">{todo.text}</span>
-                  <button onClick={() => handleDeleteTripTodo(todo.id)} className="text-slate-500 hover:text-red-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-              {todos.filter(t => t.completed).map(todo => (
-                <li key={todo.id} className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-3 border border-slate-700/50 opacity-60">
-                  <button onClick={() => handleToggleTripTodo(todo.id)} className="text-green-400">
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M9 12l2 2 4-4" />
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  </button>
-                  <span className="flex-1 text-slate-400 line-through">{todo.text}</span>
-                  <button onClick={() => handleDeleteTripTodo(todo.id)} className="text-slate-500 hover:text-red-400">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
         {/* Timeline */}
         {blocks.length === 0 ? (
           <div className="text-center py-16">
@@ -317,6 +259,9 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </main>
+
+      {/* Floating Menu */}
+      <FloatingMenu tripId={id} tripName={trip.name} />
     </div>
   )
 }
