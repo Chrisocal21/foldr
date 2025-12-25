@@ -116,7 +116,7 @@ export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
         break
     }
 
-    if (block.notes && block.type !== 'note') {
+    if ('notes' in block && block.notes) {
       addSpace(2)
       addText(`Notes: ${block.notes}`, 9)
     }

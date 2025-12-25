@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-950">
@@ -76,12 +78,12 @@ export default function Home() {
 
           {/* CTA */}
           <div className="text-center">
-            <a
+            <Link
               href="/trips"
               className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold mb-4 transition-colors"
             >
               Get Started
-            </a>
+            </Link>
             <p className="text-slate-300">
               Built for travelers who want simplicity and reliability
             </p>

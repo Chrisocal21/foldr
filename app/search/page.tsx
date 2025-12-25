@@ -69,7 +69,7 @@ export default function SearchPage() {
           </div>
         ) : totalResults === 0 ? (
           <div className="text-center py-16">
-            <p className="text-slate-400 text-lg">No results found for "{query}"</p>
+            <p className="text-slate-400 text-lg">No results found for &ldquo;{query}&rdquo;</p>
           </div>
         ) : (
           <div className="space-y-6">

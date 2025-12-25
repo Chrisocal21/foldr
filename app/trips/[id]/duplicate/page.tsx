@@ -61,7 +61,7 @@ export default function DuplicateTripPage({ params }: { params: Promise<{ id: st
         ...block,
         id: crypto.randomUUID(),
         tripId: newTripId,
-        date: undefined, // Clear dates so user can update them
+        date: '', // Clear dates so user can update them
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
