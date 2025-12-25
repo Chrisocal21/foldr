@@ -148,7 +148,7 @@ export default function Home() {
 
       {/* Middle: Today's Trips */}
       <section className="flex-1 flex flex-col items-center justify-center">
-        <h2 className="text-xl text-white mb-4">Today's Trips</h2>
+        <h2 className="text-xl text-white mb-4">Today&apos;s Trips</h2>
         {todayTrips.length === 0 ? (
           <div className="text-slate-400">No trips for today.</div>
         ) : (
