@@ -2,6 +2,72 @@
 
 A trip-based information hub. One place to store and reference all travel info instead of digging through emails, screenshots, and notes.
 
+**Status:** ✅ Live at [foldr-chrisoc.vercel.app](https://foldr-chrisoc.vercel.app)
+
+---
+
+## Current Features (Implemented)
+
+### ✅ Authentication
+- Login page with secure credentials (server-side env vars)
+- Session persistence via localStorage
+- Eye toggle to show/hide password
+
+### ✅ Main Dashboard
+- Real-time clock and date display
+- GPS location with reverse geocoding (shows actual place name)
+- "Foldr" branding
+- Quick access to trips via + icon
+
+### ✅ Trip Management
+- Create, edit, delete trips
+- Inline editing of trip name and dates (mobile-friendly)
+- Trip status indicators: Upcoming / Active / Past (auto-detected)
+- Duplicate trip functionality
+- Today's trips display
+- Upcoming trips display with clickable cards
+
+### ✅ To-Do System
+- Global to-do list on main page
+- Tag todos to one or more trips
+- View trip-specific todos on trip detail page
+- Toggle complete/incomplete
+- Delete todos
+
+### ✅ Block Types
+| Block Type | Status |
+|------------|--------|
+| Flight | ✅ Implemented |
+| Hotel | ✅ Implemented |
+| Layover | ✅ Implemented |
+| Transport | ✅ Implemented |
+| Work/Job | ✅ Implemented |
+| Screenshot | ✅ Implemented |
+| Note | ✅ Implemented |
+
+### ✅ Export
+- PDF export of full trip itinerary
+
+### ✅ Search
+- Global search across all trips and blocks
+
+### ✅ Other Features
+- Mobile-first responsive design
+- Offline-capable (localStorage)
+- PWA manifest
+- Calendar view page
+- Roadmap page
+
+---
+
+## Tech Stack
+
+- **Framework:** Next.js 15 (App Router)
+- **Styling:** Tailwind CSS
+- **Storage:** localStorage (offline-first)
+- **Deployment:** Vercel
+- **Repo:** GitHub
+
 ---
 
 ## Problem
