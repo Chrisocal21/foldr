@@ -27,7 +27,7 @@ function calculateStats(trips: Trip[], blocks: Block[]): TripStats {
   const thisYear = now.getFullYear()
   
   const stats: TripStats = {
-    totalTrips: trips.length,
+    totalTrips: 0, // Only count completed trips
     upcomingTrips: 0,
     activeTrips: 0,
     pastTrips: 0,
@@ -46,42 +46,54 @@ function calculateStats(trips: Trip[], blocks: Block[]): TripStats {
   const countries = new Set<string>()
   let maxDays = 0
   
+  // Get IDs of past (completed) trips for filtering blocks
+  const pastTripIds = new Set<string>()
+  
   trips.forEach(trip => {
     const status = getTripStatus(trip.startDate, trip.endDate)
-    if (status === 'upcoming') stats.upcomingTrips++
-    else if (status === 'active') stats.activeTrips++
-    else stats.pastTrips++
-    
-    // Calculate trip duration
-    const start = new Date(trip.startDate)
-    const end = new Date(trip.endDate)
-    const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-    stats.totalDays += days
-    
-    // Track longest trip
-    if (days > maxDays) {
-      maxDays = days
-      stats.longestTrip = { name: trip.name, days }
-    }
-    
-    // This year stats
-    if (start.getFullYear() === thisYear || end.getFullYear() === thisYear) {
-      stats.thisYearTrips++
-      stats.thisYearDays += days
-    }
-    
-    // Track destinations
-    if (trip.destination) {
-      const parts = trip.destination.split(',').map(p => p.trim())
-      if (parts[0]) cities.add(parts[0])
-      if (parts[1]) countries.add(parts[1])
+    if (status === 'upcoming') {
+      stats.upcomingTrips++
+    } else if (status === 'active') {
+      stats.activeTrips++
+    } else {
+      // Only count PAST/COMPLETED trips in main statistics
+      stats.pastTrips++
+      stats.totalTrips++ // totalTrips = completed trips only
+      pastTripIds.add(trip.id)
+      
+      // Calculate trip duration (only for completed trips)
+      const start = new Date(trip.startDate)
+      const end = new Date(trip.endDate)
+      const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      stats.totalDays += days
+      
+      // Track longest trip (only completed)
+      if (days > maxDays) {
+        maxDays = days
+        stats.longestTrip = { name: trip.name, days }
+      }
+      
+      // This year stats (only completed)
+      if (start.getFullYear() === thisYear || end.getFullYear() === thisYear) {
+        stats.thisYearTrips++
+        stats.thisYearDays += days
+      }
+      
+      // Track destinations (only from completed trips)
+      if (trip.destination) {
+        const parts = trip.destination.split(',').map(p => p.trim())
+        if (parts[0]) cities.add(parts[0])
+        if (parts[1]) countries.add(parts[1])
+      }
     }
   })
   
-  // Count blocks by type
+  // Count blocks by type (only from completed trips)
   blocks.forEach(block => {
-    if (block.type === 'flight') stats.totalFlights++
-    if (block.type === 'hotel') stats.totalHotels++
+    if (pastTripIds.has(block.tripId)) {
+      if (block.type === 'flight') stats.totalFlights++
+      if (block.type === 'hotel') stats.totalHotels++
+    }
   })
   
   stats.citiesVisited = Array.from(cities)
