@@ -57,12 +57,12 @@ export async function login(email: string, password: string): Promise<AuthResult
 }
 
 // Sign up
-export async function signup(email: string, password: string): Promise<AuthResult> {
+export async function signup(email: string, password: string, inviteCode: string): Promise<AuthResult> {
   try {
     const response = await fetch(`${API_BASE}/auth/signup`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, inviteCode })
     })
     
     const data = await response.json()

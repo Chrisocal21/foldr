@@ -23,7 +23,7 @@ function generateUserId(): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, inviteCode } = await request.json()
     
     if (!email || !password) {
       return NextResponse.json({ success: false, error: 'Email and password required' }, { status: 400 })
@@ -31,6 +31,12 @@ export async function POST(request: NextRequest) {
     
     if (password.length < 6) {
       return NextResponse.json({ success: false, error: 'Password must be at least 6 characters' }, { status: 400 })
+    }
+    
+    // Validate invite code - stored as environment variable
+    const validInviteCode = (process.env as any).INVITE_CODE || process.env.INVITE_CODE
+    if (!inviteCode || inviteCode !== validInviteCode) {
+      return NextResponse.json({ success: false, error: 'Invalid invite code' }, { status: 403 })
     }
     
     // Get D1 database binding from env

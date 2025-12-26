@@ -1,17 +1,32 @@
 {
   "version": 1,
   "include": [
-    "/api/*",
+    "/",
+    "/auth",
+    "/auth/*",
+    "/trips",
     "/trips/*",
-    "/"
+    "/settings",
+    "/settings/*",
+    "/calendar",
+    "/calendar/*",
+    "/search",
+    "/search/*",
+    "/stats",
+    "/stats/*",
+    "/roadmap",
+    "/roadmap/*",
+    "/build",
+    "/build/*",
+    "/backend",
+    "/backend/*",
+    "/api/*"
   ],
   "exclude": [
     "/_next/static/*",
-    "/logos/*",
-    "/uploads/*",
+    "/favicon.ico",
     "/manifest.json",
-    "/BUILD_ID",
-    "/*.ico",
-    "/*.png"
+    "/logos/*",
+    "/uploads/*"
   ]
 }
