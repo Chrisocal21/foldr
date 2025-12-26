@@ -32,6 +32,13 @@
 | Hide Past Trips | Toggle to hide completed trips |
 | Block Duplicate | Copy blocks within trips |
 | Time Zone Display | Local time at destination on trip cards |
+| Auto-detect Destination | City search with timezone auto-fill |
+| Packing List | Templates (Beach/Business/Winter/Essentials), progress bar |
+| Expense Tracker | Multi-currency, categories, totals by currency |
+| Maps Integration | Leaflet map showing destination pin |
+| Trip Statistics | Total trips, days traveled, cities visited, expenses |
+| Weather Widget | 5-day forecast using Open-Meteo (free, no API key) |
+| Offline Mode | Proper offline detection, no mock data, graceful degradation |
 
 ---
 
@@ -41,8 +48,6 @@ Solid features that add real value.
 
 | Feature | Time | Why |
 |---------|------|-----|
-| **Packing List** | 4-6 hrs | Everyone forgets something. Templates for Beach/Business/Winter |
-| **Expense Tracker** | 6 hrs | Log costs per trip, categories, currency support, totals |
 | **Export to Calendar** | 3-4 hrs | Generate .ics file for Google/Apple Calendar |
 | **Weather Widget** | 4-6 hrs | 5-day forecast at destination (OpenWeatherMap free) |
 | **Trip Statistics** | 3 hrs | Total trips, days traveled, cities visited this year |
@@ -56,7 +61,6 @@ Major features requiring significant work.
 | Feature | Time | Why | Cost |
 |---------|------|-----|------|
 | **Cloud Sync** | 2-3 days | Sync across devices, backup data | $0-25/mo (Supabase) |
-| **Maps Integration** | 1-2 days | Visual map of trip locations, flight paths | Free (Leaflet) |
 | **Trip Sharing** | 1-2 days | Generate read-only link for companions | Free |
 | **Push Notifications** | 6-8 hrs | "Flight in 2 hours" reminders | Free (PWA) |
 
@@ -72,14 +76,18 @@ Major features requiring significant work.
 5. ~~Hide past trips~~ ✅
 6. ~~Block duplicate~~ ✅
 
-### Phase 3 - Features (Current)
-1. Packing list
-2. Expense tracker
+### Phase 3 - Features ✅ COMPLETE
+1. ~~Auto-detect destination~~ ✅
+2. ~~Packing list~~ ✅
+3. ~~Expense tracker~~ ✅
+4. ~~Maps integration~~ ✅
 
-### Phase 4 - Scale (Later)
-1. Cloud sync
-2. Maps integration
-3. Calendar export
+### Phase 4 - Scale (Next)
+1. ~~Trip statistics~~ ✅
+2. ~~Weather widget~~ ✅
+3. ~~Offline optimization~~ ✅
+4. Cloud sync (Cloudflare)
+5. Calendar export
 
 ---
 

@@ -18,6 +18,7 @@ export default function NewTripPage() {
   const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null)
 
   const colors = [
+    // Row 1 - Vibrant
     { name: 'Blue', value: '#3b82f6' },
     { name: 'Purple', value: '#8b5cf6' },
     { name: 'Pink', value: '#ec4899' },
@@ -26,6 +27,15 @@ export default function NewTripPage() {
     { name: 'Yellow', value: '#eab308' },
     { name: 'Green', value: '#10b981' },
     { name: 'Teal', value: '#14b8a6' },
+    // Row 2 - Muted/Pastel
+    { name: 'Sky', value: '#0ea5e9' },
+    { name: 'Indigo', value: '#6366f1' },
+    { name: 'Fuchsia', value: '#d946ef' },
+    { name: 'Rose', value: '#f43f5e' },
+    { name: 'Amber', value: '#f59e0b' },
+    { name: 'Lime', value: '#84cc16' },
+    { name: 'Emerald', value: '#059669' },
+    { name: 'Cyan', value: '#06b6d4' },
   ]
 
   const handleSubmit = (e: FormEvent) => {
@@ -159,13 +169,13 @@ export default function NewTripPage() {
             <label className="block text-sm font-medium text-slate-300 mb-2">
               Color
             </label>
-            <div className="flex gap-3 flex-wrap">
+            <div className="grid grid-cols-8 gap-2 sm:flex sm:gap-3">
               {colors.map((color) => (
                 <button
                   key={color.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, color: color.value })}
-                  className={`w-10 h-10 rounded-lg transition-all ${
+                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg transition-all ${
                     formData.color === color.value
                       ? 'ring-2 ring-white ring-offset-2 ring-offset-slate-950'
                       : 'opacity-70 hover:opacity-100'

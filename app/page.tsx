@@ -177,6 +177,27 @@ export default function Home() {
               </button>
             </div>
 
+            {/* More Settings Link */}
+            <Link
+              href="/settings"
+              onClick={() => setShowSettings(false)}
+              className="flex items-center justify-between py-3 border-b transition-colors hover:bg-slate-700/30"
+              style={{ borderColor: theme === 'light' ? '#e2e8f0' : '#334155' }}
+            >
+              <div className="flex items-center gap-3">
+                <svg className="w-5 h-5" style={{ color: theme === 'light' ? '#3b82f6' : '#60a5fa' }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span style={{ color: theme === 'light' ? '#334155' : '#cbd5e1' }}>
+                  Units & Preferences
+                </span>
+              </div>
+              <svg className="w-4 h-4" style={{ color: theme === 'light' ? '#94a3b8' : '#64748b' }} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="m9 18 6-6-6-6" />
+              </svg>
+            </Link>
+
             {/* Logout Button */}
             <div className="py-3 border-b" style={{ borderColor: theme === 'light' ? '#e2e8f0' : '#334155' }}>
               <button

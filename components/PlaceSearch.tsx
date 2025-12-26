@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { PlaceResult, searchPlaces } from '@/lib/storage'
+import { useOnline } from '@/lib/offline'
 
 interface PlaceSearchProps {
   value: string
@@ -22,14 +23,17 @@ export function PlaceSearch({
   const [isSearching, setIsSearching] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null)
+  const [offlineWarning, setOfflineWarning] = useState(false)
   const searchTimeout = useRef<NodeJS.Timeout | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const isOnline = useOnline()
 
   // Handle click outside to close dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setShowDropdown(false)
+        setOfflineWarning(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -47,12 +51,25 @@ export function PlaceSearch({
     if (value.length < 2) {
       setResults([])
       setShowDropdown(false)
+      setOfflineWarning(false)
       return
     }
 
+    // Check if offline before searching
+    if (!isOnline) {
+      setOfflineWarning(true)
+      setIsSearching(false)
+      setResults([])
+      return
+    }
+
+    setOfflineWarning(false)
     setIsSearching(true)
     searchTimeout.current = setTimeout(async () => {
       const places = await searchPlaces(value)
+      if (places.length === 0 && !navigator.onLine) {
+        setOfflineWarning(true)
+      }
       setResults(places)
       setShowDropdown(places.length > 0)
       setIsSearching(false)
@@ -63,10 +80,11 @@ export function PlaceSearch({
         clearTimeout(searchTimeout.current)
       }
     }
-  }, [value, selectedPlace])
+  }, [value, selectedPlace, isOnline])
 
   const handleSelect = (place: PlaceResult) => {
     setSelectedPlace(place)
+    setOfflineWarning(false)
     onChange(place.city + (place.country ? `, ${place.country}` : ''))
     setShowDropdown(false)
     onPlaceSelect(place)
@@ -141,6 +159,21 @@ export function PlaceSearch({
               </div>
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Offline Warning */}
+      {offlineWarning && value.length >= 2 && (
+        <div className="absolute z-50 w-full mt-1 bg-slate-800 border border-amber-600/50 rounded-lg shadow-xl p-4">
+          <div className="flex items-center gap-3 text-amber-400">
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M18.364 5.636a9 9 0 11-12.728 12.728 9 9 0 0112.728-12.728zM15 12H9" />
+            </svg>
+            <div>
+              <p className="text-sm font-medium">You&apos;re offline</p>
+              <p className="text-xs text-slate-400">City search requires an internet connection. You can still type the destination manually.</p>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -1,4 +1,4 @@
-import { Trip, Block, TripStatus, Todo } from './types'
+import { Trip, Block, TripStatus, Todo, PackingItem, PackingCategory, PackingTemplate, Expense, ExpenseCategory } from './types'
 
 const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
@@ -113,19 +113,26 @@ export interface PlaceResult {
 // Timezone lookup by rough coordinates (approximate)
 // Maps regions to timezones based on longitude/latitude
 function getTimezoneFromCoords(lat: number, lon: number): string {
-  // Major city timezone mapping (more accurate than pure coordinate-based)
-  // This covers most travel destinations
-  
-  // Americas
+  // Americas (west of -50 longitude)
   if (lon < -50) {
-    if (lat > 40 && lon > -80) return 'America/New_York' // US East Coast
-    if (lat > 40 && lon <= -80 && lon > -100) return 'America/Chicago' // US Central
-    if (lat > 40 && lon <= -100 && lon > -115) return 'America/Denver' // US Mountain
-    if (lat > 40 && lon <= -115) return 'America/Los_Angeles' // US West Coast
-    if (lat > 60) return 'America/Anchorage' // Alaska
-    if (lat < 25 && lat > 15 && lon > -105) return 'America/Mexico_City' // Mexico
-    if (lat < 0 && lon > -60) return 'America/Sao_Paulo' // Brazil
-    if (lat < -30) return 'America/Argentina/Buenos_Aires' // Argentina
+    // Hawaii
+    if (lat > 18 && lat < 23 && lon < -150) return 'Pacific/Honolulu'
+    // Alaska
+    if (lat > 50 && lon < -130) return 'America/Anchorage'
+    
+    // Continental US by longitude bands (works for all latitudes)
+    if (lon <= -115) return 'America/Los_Angeles' // Pacific: CA, WA, OR, NV
+    if (lon <= -100) return 'America/Denver' // Mountain: CO, AZ, NM, UT, MT
+    if (lon <= -85) return 'America/Chicago' // Central: TX, IL, MN, etc.
+    if (lon > -85) return 'America/New_York' // Eastern: NY, FL, GA, etc.
+    
+    // Mexico
+    if (lat < 25 && lat > 15 && lon > -105) return 'America/Mexico_City'
+    // Brazil
+    if (lat < 0 && lon > -60) return 'America/Sao_Paulo'
+    // Argentina
+    if (lat < -30) return 'America/Argentina/Buenos_Aires'
+    
     return 'America/New_York' // Default Americas
   }
   
@@ -203,6 +210,9 @@ export async function searchPlaces(query: string): Promise<PlaceResult[]> {
       const addr = item.address || {}
       const city = addr.city || addr.town || addr.village || addr.municipality || ''
       const country = addr.country || ''
+      const tz = getTimezoneFromCoords(lat, lon)
+      
+      console.log('Place search result:', { city, lat, lon, timezone: tz })
       
       return {
         displayName: item.display_name,
@@ -210,7 +220,7 @@ export async function searchPlaces(query: string): Promise<PlaceResult[]> {
         country,
         latitude: lat,
         longitude: lon,
-        timezone: getTimezoneFromCoords(lat, lon)
+        timezone: tz
       }
     })
   } catch (error) {
@@ -406,3 +416,203 @@ export function searchAll(query: string): { trips: Trip[], blocks: Block[] } {
   
   return { trips, blocks }
 }
+
+// Packing List
+const PACKING_KEY = 'foldr_packing'
+
+export function getPackingItems(tripId: string): PackingItem[] {
+  if (typeof window === 'undefined') return []
+  const data = localStorage.getItem(PACKING_KEY)
+  const items: PackingItem[] = data ? JSON.parse(data) : []
+  return items.filter(item => item.tripId === tripId)
+}
+
+export function savePackingItem(item: PackingItem): void {
+  const data = localStorage.getItem(PACKING_KEY)
+  const items: PackingItem[] = data ? JSON.parse(data) : []
+  const index = items.findIndex(i => i.id === item.id)
+  
+  if (index >= 0) {
+    items[index] = item
+  } else {
+    items.push(item)
+  }
+  
+  localStorage.setItem(PACKING_KEY, JSON.stringify(items))
+}
+
+export function deletePackingItem(itemId: string): void {
+  const data = localStorage.getItem(PACKING_KEY)
+  const items: PackingItem[] = data ? JSON.parse(data) : []
+  localStorage.setItem(PACKING_KEY, JSON.stringify(items.filter(i => i.id !== itemId)))
+}
+
+export function togglePackingItem(itemId: string): void {
+  const data = localStorage.getItem(PACKING_KEY)
+  const items: PackingItem[] = data ? JSON.parse(data) : []
+  const index = items.findIndex(i => i.id === itemId)
+  if (index >= 0) {
+    items[index].packed = !items[index].packed
+    localStorage.setItem(PACKING_KEY, JSON.stringify(items))
+  }
+}
+
+export function addPackingTemplate(tripId: string, templateItems: { name: string; category: PackingCategory; quantity?: number }[]): void {
+  const existingItems = getPackingItems(tripId)
+  const existingNames = new Set(existingItems.map(i => i.name.toLowerCase()))
+  
+  templateItems.forEach(item => {
+    if (!existingNames.has(item.name.toLowerCase())) {
+      savePackingItem({
+        id: crypto.randomUUID(),
+        tripId,
+        name: item.name,
+        category: item.category,
+        packed: false,
+        quantity: item.quantity,
+        createdAt: new Date().toISOString()
+      })
+    }
+  })
+}
+
+// Packing Templates
+export const PACKING_TEMPLATES: PackingTemplate[] = [
+  {
+    name: 'Beach',
+    icon: '🏖️',
+    items: [
+      { name: 'Swimsuit', category: 'clothing' },
+      { name: 'Flip flops', category: 'clothing' },
+      { name: 'Sunglasses', category: 'accessories' },
+      { name: 'Sunscreen', category: 'toiletries' },
+      { name: 'Beach towel', category: 'other' },
+      { name: 'Hat/Cap', category: 'accessories' },
+      { name: 'Shorts', category: 'clothing', quantity: 3 },
+      { name: 'T-shirts', category: 'clothing', quantity: 4 },
+      { name: 'Sandals', category: 'clothing' },
+      { name: 'Aloe vera gel', category: 'toiletries' },
+    ]
+  },
+  {
+    name: 'Business',
+    icon: '💼',
+    items: [
+      { name: 'Dress shirts', category: 'clothing', quantity: 3 },
+      { name: 'Dress pants', category: 'clothing', quantity: 2 },
+      { name: 'Blazer/Jacket', category: 'clothing' },
+      { name: 'Dress shoes', category: 'clothing' },
+      { name: 'Tie', category: 'accessories' },
+      { name: 'Belt', category: 'accessories' },
+      { name: 'Laptop', category: 'electronics' },
+      { name: 'Laptop charger', category: 'electronics' },
+      { name: 'Business cards', category: 'documents' },
+      { name: 'Portfolio/Notebook', category: 'other' },
+    ]
+  },
+  {
+    name: 'Winter',
+    icon: '❄️',
+    items: [
+      { name: 'Heavy coat', category: 'clothing' },
+      { name: 'Sweaters', category: 'clothing', quantity: 3 },
+      { name: 'Thermal underwear', category: 'clothing' },
+      { name: 'Winter boots', category: 'clothing' },
+      { name: 'Gloves', category: 'accessories' },
+      { name: 'Scarf', category: 'accessories' },
+      { name: 'Beanie/Winter hat', category: 'accessories' },
+      { name: 'Warm socks', category: 'clothing', quantity: 5 },
+      { name: 'Lip balm', category: 'toiletries' },
+      { name: 'Hand warmers', category: 'other' },
+    ]
+  },
+  {
+    name: 'Essentials',
+    icon: '✈️',
+    items: [
+      { name: 'Passport', category: 'documents' },
+      { name: 'Phone charger', category: 'electronics' },
+      { name: 'Toothbrush', category: 'toiletries' },
+      { name: 'Toothpaste', category: 'toiletries' },
+      { name: 'Deodorant', category: 'toiletries' },
+      { name: 'Underwear', category: 'clothing', quantity: 5 },
+      { name: 'Socks', category: 'clothing', quantity: 5 },
+      { name: 'Medications', category: 'toiletries' },
+      { name: 'Wallet', category: 'accessories' },
+      { name: 'Headphones', category: 'electronics' },
+    ]
+  }
+]
+
+// Expenses
+const EXPENSES_KEY = 'foldr_expenses'
+
+export function getExpenses(tripId?: string): Expense[] {
+  if (typeof window === 'undefined') return []
+  const data = localStorage.getItem(EXPENSES_KEY)
+  const expenses: Expense[] = data ? JSON.parse(data) : []
+  
+  if (tripId) {
+    return expenses.filter(e => e.tripId === tripId).sort((a, b) => 
+      new Date(b.date).getTime() - new Date(a.date).getTime()
+    )
+  }
+  
+  return expenses.sort((a, b) => 
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+}
+
+export function saveExpense(expense: Expense): void {
+  const data = localStorage.getItem(EXPENSES_KEY)
+  const expenses: Expense[] = data ? JSON.parse(data) : []
+  const index = expenses.findIndex(e => e.id === expense.id)
+  
+  if (index >= 0) {
+    expenses[index] = expense
+  } else {
+    expenses.push(expense)
+  }
+  
+  localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses))
+}
+
+export function deleteExpense(expenseId: string): void {
+  const data = localStorage.getItem(EXPENSES_KEY)
+  const expenses: Expense[] = data ? JSON.parse(data) : []
+  localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses.filter(e => e.id !== expenseId)))
+}
+
+export function getExpenseTotal(tripId: string, currency?: string): number {
+  const expenses = getExpenses(tripId)
+  if (currency) {
+    return expenses.filter(e => e.currency === currency).reduce((sum, e) => sum + e.amount, 0)
+  }
+  return expenses.reduce((sum, e) => sum + e.amount, 0)
+}
+
+export const CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'MXN', symbol: 'Mex$', name: 'Mexican Peso' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'KRW', symbol: '₩', name: 'Korean Won' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+]
+
+export const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string; icon: string }[] = [
+  { value: 'transport', label: 'Transport', icon: '🚗' },
+  { value: 'accommodation', label: 'Accommodation', icon: '🏨' },
+  { value: 'food', label: 'Food & Drink', icon: '🍽️' },
+  { value: 'activities', label: 'Activities', icon: '🎯' },
+  { value: 'shopping', label: 'Shopping', icon: '🛍️' },
+  { value: 'other', label: 'Other', icon: '📦' },
+]

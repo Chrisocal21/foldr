@@ -8,6 +8,8 @@ import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, sav
 import { BlockCard } from '@/components/BlockCard'
 import { exportTripToPDF } from '@/lib/pdf-export'
 import FloatingMenu from '@/components/FloatingMenu'
+import { TripMap } from '@/components/TripMap'
+import { WeatherWidget } from '@/components/WeatherWidget'
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -430,6 +432,41 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             ))}
           </div>
         )}
+
+        {/* Map, Weather, Packing List, Expenses Section */}
+        <div className="mt-8 space-y-6 pb-24">
+          {/* Map & Weather Row */}
+          {trip.latitude && trip.longitude && (
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Map */}
+              <div>
+                <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  Destination
+                </h2>
+                <TripMap 
+                  latitude={trip.latitude} 
+                  longitude={trip.longitude} 
+                  destination={trip.destination}
+                  className="h-48 md:h-52"
+                />
+              </div>
+              
+              {/* Weather */}
+              <div>
+                <WeatherWidget 
+                  latitude={trip.latitude} 
+                  longitude={trip.longitude} 
+                  destination={trip.destination}
+                />
+              </div>
+            </div>
+          )}
+
+        </div>
       </main>
 
       {/* Delete Trip Modal */}

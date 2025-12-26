@@ -1,8 +1,10 @@
 import { useState } from 'react'
-import { Block, FlightBlock, HotelBlock, WorkBlock, TransportBlock, NoteBlock, LayoverBlock, ScreenshotBlock } from '@/lib/types'
+import { Block, FlightBlock, HotelBlock, WorkBlock, TransportBlock, NoteBlock, LayoverBlock, ScreenshotBlock, PackingBlock, ExpenseBlock } from '@/lib/types'
 import { CopyField } from './CopyField'
 import { duplicateBlock } from '@/lib/storage'
 import Link from 'next/link'
+import { PackingList } from './PackingList'
+import { ExpenseTracker } from './ExpenseTracker'
 
 // Helper to format date string correctly (avoiding timezone issues)
 // Input: "2025-01-15" -> Output: "1/15/2025" (in local format)
@@ -90,6 +92,20 @@ function getBlockMeta(type: Block['type']) {
           <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
         </svg>
       )}
+    case 'packing':
+      return { color: 'emerald', icon: (
+        <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+          <rect x="9" y="3" width="6" height="4" rx="1" />
+          <path d="M9 12l2 2 4-4" />
+        </svg>
+      )}
+    case 'expense':
+      return { color: 'amber', icon: (
+        <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+        </svg>
+      )}
     default:
       return { color: 'slate', icon: null }
   }
@@ -115,6 +131,10 @@ function getBlockSummary(block: Block): { title: string; subtitle: string } {
       return { title: 'Screenshot', subtitle: block.caption || 'Image' }
     case 'note':
       return { title: 'Note', subtitle: block.title || block.text.slice(0, 50) + (block.text.length > 50 ? '...' : '') }
+    case 'packing':
+      return { title: 'Packing List', subtitle: block.title || 'Packing List' }
+    case 'expense':
+      return { title: 'Expenses', subtitle: block.title || 'Expense Tracker' }
     default:
       return { title: 'Block', subtitle: '' }
   }
@@ -128,8 +148,27 @@ export function BlockCard({
   isLast
 }: BlockCardProps) {
   const [showMenu, setShowMenu] = useState(false)
-  const [isCollapsed, setIsCollapsed] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  
+  // Persist collapsed state in localStorage
+  const storageKey = `block-collapsed-${block.id}`
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(storageKey) === 'true'
+    }
+    return false
+  })
+
+  const handleToggleCollapse = (collapsed: boolean) => {
+    setIsCollapsed(collapsed)
+    if (typeof window !== 'undefined') {
+      if (collapsed) {
+        localStorage.setItem(storageKey, 'true')
+      } else {
+        localStorage.removeItem(storageKey)
+      }
+    }
+  }
   
   const meta = getBlockMeta(block.type)
   const summary = getBlockSummary(block)
@@ -162,6 +201,10 @@ export function BlockCard({
         return <ScreenshotCard block={block} />
       case 'note':
         return <NoteCard block={block} />
+      case 'packing':
+        return <PackingCard block={block} />
+      case 'expense':
+        return <ExpenseCard block={block} />
       default:
         return null
     }
@@ -172,7 +215,7 @@ export function BlockCard({
     return (
       <div className="relative group">
         <div 
-          onClick={() => setIsCollapsed(false)}
+          onClick={() => handleToggleCollapse(false)}
           className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
         >
           <div className={`bg-${meta.color}-600/20 p-1.5 rounded-lg`}>
@@ -205,7 +248,7 @@ export function BlockCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setIsCollapsed(false)
+                  handleToggleCollapse(false)
                   setShowMenu(false)
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
@@ -269,7 +312,7 @@ export function BlockCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  setIsCollapsed(true)
+                  handleToggleCollapse(true)
                   setShowMenu(false)
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
@@ -646,6 +689,52 @@ function ScreenshotCard({ block }: { block: ScreenshotBlock }) {
           )}
         </div>
       )}
+    </div>
+  )
+}
+
+function PackingCard({ block }: { block: PackingBlock }) {
+  return (
+    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="p-4 border-b border-slate-700">
+        <div className="flex items-center gap-3">
+          <div className="bg-emerald-600/20 p-2 rounded-lg">
+            <svg className="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-white font-semibold">Packing List</h3>
+            <p className="text-sm text-slate-400">Track what to pack for your trip</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-0">
+        <PackingList tripId={block.tripId} />
+      </div>
+    </div>
+  )
+}
+
+function ExpenseCard({ block }: { block: ExpenseBlock }) {
+  return (
+    <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+      <div className="p-4 border-b border-slate-700">
+        <div className="flex items-center gap-3">
+          <div className="bg-amber-600/20 p-2 rounded-lg">
+            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-white font-semibold">Expense Tracker</h3>
+            <p className="text-sm text-slate-400">Track your trip expenses</p>
+          </div>
+        </div>
+      </div>
+      <div className="p-0">
+        <ExpenseTracker tripId={block.tripId} />
+      </div>
     </div>
   )
 }

@@ -1,6 +1,6 @@
 export type TripStatus = 'upcoming' | 'active' | 'past'
 
-export type BlockType = 'flight' | 'hotel' | 'layover' | 'work' | 'transport' | 'screenshot' | 'note'
+export type BlockType = 'flight' | 'hotel' | 'layover' | 'work' | 'transport' | 'screenshot' | 'note' | 'packing' | 'expense'
 
 export interface Trip {
   id: string
@@ -102,7 +102,19 @@ export interface NoteBlock extends BaseBlock {
   text: string
 }
 
-export type Block = FlightBlock | HotelBlock | LayoverBlock | WorkBlock | TransportBlock | ScreenshotBlock | NoteBlock
+export interface PackingBlock extends BaseBlock {
+  type: 'packing'
+  title?: string
+  notes?: string
+}
+
+export interface ExpenseBlock extends BaseBlock {
+  type: 'expense'
+  title?: string
+  notes?: string
+}
+
+export type Block = FlightBlock | HotelBlock | LayoverBlock | WorkBlock | TransportBlock | ScreenshotBlock | NoteBlock | PackingBlock | ExpenseBlock
 
 export type TodoPriority = 'low' | 'medium' | 'high'
 export type TodoStatus = 'todo' | 'in-progress' | 'done'
@@ -119,3 +131,49 @@ export interface Todo {
   createdAt: string
   updatedAt: string
 }
+
+// Packing List Types
+export interface PackingItem {
+  id: string
+  tripId: string
+  name: string
+  category: PackingCategory
+  packed: boolean
+  quantity?: number
+  createdAt: string
+}
+
+export type PackingCategory = 
+  | 'clothing' 
+  | 'toiletries' 
+  | 'electronics' 
+  | 'documents' 
+  | 'accessories' 
+  | 'other'
+
+export interface PackingTemplate {
+  name: string
+  icon: string
+  items: { name: string; category: PackingCategory; quantity?: number }[]
+}
+
+// Expense Tracker Types
+export interface Expense {
+  id: string
+  tripId: string
+  description: string
+  amount: number
+  currency: string
+  category: ExpenseCategory
+  date: string // ISO date string
+  createdAt: string
+}
+
+export type ExpenseCategory = 
+  | 'transport' 
+  | 'accommodation' 
+  | 'food' 
+  | 'activities' 
+  | 'shopping' 
+  | 'other'
+

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/lib/theme-context'
+import { SettingsProvider } from '@/lib/settings-context'
+import { OfflineBanner } from '@/components/OfflineIndicator'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -40,10 +42,14 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/logos/apple-touch-icon.png" />
         <link rel="preconnect" href="https://nominatim.openstreetmap.org" />
         <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org" />
+        <link rel="preconnect" href="https://api.open-meteo.com" />
       </head>
       <body className={`${inter.className} theme-bg-primary`}>
         <ThemeProvider>
-          {children}
+          <SettingsProvider>
+            <OfflineBanner />
+            {children}
+          </SettingsProvider>
         </ThemeProvider>
       </body>
     </html>

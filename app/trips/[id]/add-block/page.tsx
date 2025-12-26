@@ -3,7 +3,7 @@
 import { useState, FormEvent, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { BlockType, FlightBlock, HotelBlock, WorkBlock, TransportBlock, NoteBlock, LayoverBlock, ScreenshotBlock } from '@/lib/types'
+import { BlockType, FlightBlock, HotelBlock, WorkBlock, TransportBlock, NoteBlock, LayoverBlock, ScreenshotBlock, PackingBlock, ExpenseBlock } from '@/lib/types'
 import { saveBlock } from '@/lib/storage'
 import { ComboBox } from '@/components/ComboBox'
 import { AIRLINES, AIRPORTS, TERMINALS, TRANSPORT_TYPES, HOTEL_CHAINS } from '@/lib/travel-data'
@@ -86,6 +86,20 @@ export default function AddBlockPage({ params }: { params: Promise<{ id: string 
               active={blockType === 'note'}
               onClick={() => setBlockType('note')}
             />
+            <BlockTypeButton
+              type="packing"
+              label="Packing"
+              icon={<PackingIcon />}
+              active={blockType === 'packing'}
+              onClick={() => setBlockType('packing')}
+            />
+            <BlockTypeButton
+              type="expense"
+              label="Expenses"
+              icon={<ExpenseIcon />}
+              active={blockType === 'expense'}
+              onClick={() => setBlockType('expense')}
+            />
           </div>
         </div>
 
@@ -97,6 +111,8 @@ export default function AddBlockPage({ params }: { params: Promise<{ id: string 
         {blockType === 'work' && <WorkForm tripId={id} />}
         {blockType === 'screenshot' && <ScreenshotForm tripId={id} />}
         {blockType === 'note' && <NoteForm tripId={id} />}
+        {blockType === 'packing' && <PackingForm tripId={id} />}
+        {blockType === 'expense' && <ExpenseForm tripId={id} />}
       </main>
     </div>
   )
@@ -718,6 +734,24 @@ function CameraIcon() {
   )
 }
 
+function PackingIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+      <rect x="9" y="3" width="6" height="4" rx="1" />
+      <path d="M9 12l2 2 4-4" />
+    </svg>
+  )
+}
+
+function ExpenseIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+    </svg>
+  )
+}
+
 function LayoverForm({ tripId }: { tripId: string }) {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -912,6 +946,122 @@ function ScreenshotForm({ tripId }: { tripId: string }) {
         ) : (
           'Add Screenshot'
         )}
+      </button>
+    </form>
+  )
+}
+
+function PackingForm({ tripId }: { tripId: string }) {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    title: '',
+    notes: '',
+  })
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    
+    const block: PackingBlock = {
+      id: crypto.randomUUID(),
+      tripId,
+      type: 'packing',
+      title: formData.title || 'Packing List',
+      notes: formData.notes || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    
+    saveBlock(block)
+    router.push(`/trips/${tripId}`)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 mb-4">
+        <p className="text-slate-400 text-sm">
+          Add a packing list to track what you need to bring. You can add items and check them off as you pack.
+        </p>
+      </div>
+
+      <input
+        type="text"
+        placeholder="List name (e.g., Beach Trip Essentials)"
+        value={formData.title}
+        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <textarea
+        placeholder="Notes (optional)"
+        value={formData.notes}
+        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+        rows={3}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+      />
+
+      <button
+        type="submit"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+      >
+        Add Packing List
+      </button>
+    </form>
+  )
+}
+
+function ExpenseForm({ tripId }: { tripId: string }) {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    title: '',
+    notes: '',
+  })
+
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault()
+    
+    const block: ExpenseBlock = {
+      id: crypto.randomUUID(),
+      tripId,
+      type: 'expense',
+      title: formData.title || 'Expenses',
+      notes: formData.notes || undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    
+    saveBlock(block)
+    router.push(`/trips/${tripId}`)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700/50 mb-4">
+        <p className="text-slate-400 text-sm">
+          Add an expense tracker to log your spending. Track costs across multiple currencies and categories.
+        </p>
+      </div>
+
+      <input
+        type="text"
+        placeholder="Tracker name (e.g., Japan Trip Budget)"
+        value={formData.title}
+        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <textarea
+        placeholder="Notes (optional)"
+        value={formData.notes}
+        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+        rows={3}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+      />
+
+      <button
+        type="submit"
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+      >
+        Add Expense Tracker
       </button>
     </form>
   )
