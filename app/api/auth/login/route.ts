@@ -56,6 +56,12 @@ export async function POST(request: NextRequest) {
     // Generate new token
     const token = generateToken()
     
+    // Store token in database for later verification
+    await db.prepare(`
+      INSERT OR REPLACE INTO tokens (token, user_id, created_at)
+      VALUES (?, ?, ?)
+    `).bind(token, user.id, new Date().toISOString()).run()
+    
     return NextResponse.json({
       success: true,
       userId: user.id,

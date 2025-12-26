@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { login, signup, fullSync } from '@/lib/cloud-sync'
+import dynamic from 'next/dynamic'
+import { login, signup, fullSync, isLoggedIn } from '@/lib/cloud-sync'
 
 function AuthForm() {
   const router = useRouter()
@@ -17,6 +18,18 @@ function AuthForm() {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
+  const [mounted, setMounted] = useState(false)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+
+  // Check if already logged in and redirect to trips
+  useEffect(() => {
+    setMounted(true)
+    if (isLoggedIn()) {
+      router.replace('/trips')
+    } else {
+      setCheckingAuth(false)
+    }
+  }, [router])
 
   // Check for ?mode=signup or ?mode=reset in URL
   useEffect(() => {
@@ -77,6 +90,15 @@ function AuthForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Show loading spinner until client-side mounted and auth checked
+  if (!mounted || checkingAuth) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      </div>
+    )
   }
 
   return (
@@ -298,13 +320,5 @@ function AuthForm() {
 }
 
 export default function Home() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-      </div>
-    }>
-      <AuthForm />
-    </Suspense>
-  )
+  return <AuthForm />
 }

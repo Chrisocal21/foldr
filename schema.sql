@@ -57,6 +57,14 @@ CREATE TABLE IF NOT EXISTS expenses (
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
+-- Tokens table for session management
+CREATE TABLE IF NOT EXISTS tokens (
+  token TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  created_at TEXT DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
 -- Settings table
 CREATE TABLE IF NOT EXISTS settings (
   user_id TEXT PRIMARY KEY,
@@ -72,3 +80,4 @@ CREATE INDEX IF NOT EXISTS idx_blocks_trip ON blocks(trip_id);
 CREATE INDEX IF NOT EXISTS idx_todos_user ON todos(user_id);
 CREATE INDEX IF NOT EXISTS idx_packing_user ON packing_items(user_id);
 CREATE INDEX IF NOT EXISTS idx_expenses_user ON expenses(user_id);
+CREATE INDEX IF NOT EXISTS idx_tokens_user ON tokens(user_id);

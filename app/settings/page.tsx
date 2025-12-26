@@ -48,7 +48,7 @@ export default function SettingsPage() {
     logout()
     setLoggedIn(false)
     setUserEmail(null)
-    router.push('/auth')
+    router.push('/')
   }
 
   const handleChangePassword = async () => {
@@ -318,7 +318,7 @@ export default function SettingsPage() {
                     <p className="text-sm text-slate-400">Sign in to sync across devices</p>
                   </div>
                   <Link
-                    href="/auth"
+                    href="/"
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
                   >
                     Sign In

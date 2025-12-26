@@ -71,6 +71,12 @@ export async function POST(request: NextRequest) {
       'INSERT INTO users (id, email, password_hash) VALUES (?, ?, ?)'
     ).bind(userId, email, passwordHash).run()
     
+    // Store token in database for later verification
+    await db.prepare(`
+      INSERT OR REPLACE INTO tokens (token, user_id, created_at)
+      VALUES (?, ?, ?)
+    `).bind(token, userId, new Date().toISOString()).run()
+    
     return NextResponse.json({
       success: true,
       userId,

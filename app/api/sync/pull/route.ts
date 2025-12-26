@@ -1,20 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// Verify token and get user ID
-function getUserFromToken(request: NextRequest): string | null {
+// Verify token and get user ID from database
+async function getUserFromToken(request: NextRequest, db: any): Promise<string | null> {
   const authHeader = request.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
-  return 'verified_user'
+  
+  const token = authHeader.substring(7)
+  
+  if (!db) {
+    // Local development - return a mock user
+    return 'local_user'
+  }
+  
+  // Look up token in database
+  const tokenRecord = await db.prepare('SELECT user_id FROM tokens WHERE token = ?').bind(token).first()
+  return tokenRecord?.user_id || null
 }
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = getUserFromToken(request)
+    const db = (process.env as any).DB
+    const userId = await getUserFromToken(request, db)
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })
     }
-    
-    const db = (process.env as any).DB
     
     if (!db) {
       // Local development mode - return empty
