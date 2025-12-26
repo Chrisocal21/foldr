@@ -6,7 +6,16 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { login, signup, fullSync, isLoggedIn } from '@/lib/cloud-sync'
 
-function AuthForm() {
+// Loading component shown during SSR and initial client render
+function AuthLoading() {
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+    </div>
+  )
+}
+
+function AuthFormInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [mode, setMode] = useState<'login' | 'signup' | 'reset'>('login')
@@ -94,11 +103,7 @@ function AuthForm() {
 
   // Show loading spinner until client-side mounted and auth checked
   if (!mounted || checkingAuth) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
-      </div>
-    )
+    return <AuthLoading />
   }
 
   return (
@@ -319,14 +324,15 @@ function AuthForm() {
   )
 }
 
-export default function Home() {
+// Wrap in Suspense to handle useSearchParams
+function AuthForm() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-      </div>
-    }>
-      <AuthForm />
+    <Suspense fallback={<AuthLoading />}>
+      <AuthFormInner />
     </Suspense>
   )
+}
+
+export default function Home() {
+  return <AuthForm />
 }
