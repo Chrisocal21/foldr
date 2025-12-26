@@ -6,6 +6,14 @@ import { useRouter } from 'next/navigation'
 import { searchAll } from '@/lib/storage'
 import { Trip, Block } from '@/lib/types'
 
+// Helper to parse date string as local date
+const formatDate = (dateStr: string): string => {
+  const [datePart] = dateStr.split('T')
+  const [year, month, day] = datePart.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
+  return date.toLocaleDateString()
+}
+
 export default function SearchPage() {
   const router = useRouter()
   const [query, setQuery] = useState('')
@@ -91,7 +99,7 @@ export default function SearchPage() {
                     >
                       <h3 className="text-white font-medium mb-1">{trip.name}</h3>
                       <p className="text-sm text-slate-400">
-                        {new Date(trip.startDate).toLocaleDateString()} – {new Date(trip.endDate).toLocaleDateString()}
+                        {formatDate(trip.startDate)} – {formatDate(trip.endDate)}
                       </p>
                     </Link>
                   ))}

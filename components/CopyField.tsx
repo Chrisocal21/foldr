@@ -29,18 +29,23 @@ export function CopyField({ value, label, className = '' }: CopyFieldProps) {
       {label && (
         <div className="text-xs text-slate-500 mb-0.5">{label}</div>
       )}
-      <div className="text-slate-200 flex items-center justify-between">
-        <span>{value}</span>
-        {copied ? (
-          <svg className="w-4 h-4 text-green-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <rect x="9" y="9" width="13" height="13" rx="2" />
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-          </svg>
-        )}
+      <div className="text-slate-200 flex items-center justify-between gap-2">
+        <span className="truncate">{value}</span>
+        <span className="shrink-0 flex items-center">
+          {copied ? (
+            <span className="flex items-center gap-1 text-green-400 text-xs font-medium">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M5 13l4 4L19 7" />
+              </svg>
+              Copied!
+            </span>
+          ) : (
+            <svg className="w-4 h-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+          )}
+        </span>
       </div>
     </button>
   )

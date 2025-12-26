@@ -38,8 +38,8 @@ export default function CalendarPage() {
   }
 
   const getTripsForDay = (day: number) => {
-    const date = new Date(year, month, day)
-    const dateStr = date.toISOString().split('T')[0]
+    // Format as YYYY-MM-DD in local time (avoid toISOString which uses UTC)
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
     
     return trips.filter(trip => {
       const start = trip.startDate.split('T')[0]

@@ -1,11 +1,43 @@
 import { useState } from 'react'
 import { Block, FlightBlock, HotelBlock, WorkBlock, TransportBlock, NoteBlock, LayoverBlock, ScreenshotBlock } from '@/lib/types'
 import { CopyField } from './CopyField'
+import { duplicateBlock } from '@/lib/storage'
 import Link from 'next/link'
+
+// Helper to format date string correctly (avoiding timezone issues)
+// Input: "2025-01-15" -> Output: "1/15/2025" (in local format)
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  // Handle datetime strings like "2025-01-15T00:00:00.000Z"
+  const datePart = dateStr.split('T')[0]
+  const [year, month, day] = datePart.split('-').map(Number)
+  if (!year || !month || !day) {
+    return dateStr // Return as-is if can't parse
+  }
+  const date = new Date(year, month - 1, day) // month is 0-indexed
+  return date.toLocaleDateString()
+}
+
+// Helper to format datetime string correctly (avoiding timezone issues)
+// Input: "2025-01-15T14:30" -> Output: "1/15/2025, 2:30:00 PM" (in local format)
+function formatDateTime(dateTimeStr: string): string {
+  if (!dateTimeStr) return ''
+  // Parse datetime-local format: "YYYY-MM-DDTHH:MM"
+  const [datePart, timePart] = dateTimeStr.split('T')
+  if (!datePart || !timePart) {
+    // Return as-is if format is unexpected
+    return dateTimeStr
+  }
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hours, minutes] = timePart.split(':').map(Number)
+  const date = new Date(year, month - 1, day, hours, minutes)
+  return date.toLocaleString()
+}
 
 interface BlockCardProps {
   block: Block
   onDelete?: (blockId: string) => void
+  onDuplicate?: () => void
   isFirst?: boolean
   isLast?: boolean
 }
@@ -91,14 +123,28 @@ function getBlockSummary(block: Block): { title: string; subtitle: string } {
 export function BlockCard({ 
   block, 
   onDelete, 
+  onDuplicate,
   isFirst, 
   isLast
 }: BlockCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
   
   const meta = getBlockMeta(block.type)
   const summary = getBlockSummary(block)
+
+  const handleDuplicate = () => {
+    duplicateBlock(block.id)
+    setShowMenu(false)
+    onDuplicate?.()
+  }
+
+  const handleDelete = () => {
+    onDelete?.(block.id)
+    setShowDeleteModal(false)
+    setShowMenu(false)
+  }
 
   const renderBlockContent = () => {
     switch (block.type) {
@@ -175,9 +221,16 @@ export function BlockCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (confirm('Are you sure you want to delete this block?')) {
-                    onDelete?.(block.id)
-                  }
+                  handleDuplicate()
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Duplicate
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowDeleteModal(true)
                   setShowMenu(false)
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors"
@@ -232,9 +285,16 @@ export function BlockCard({
               <button
                 onClick={(e) => {
                   e.stopPropagation()
-                  if (confirm('Are you sure you want to delete this block?')) {
-                    onDelete?.(block.id)
-                  }
+                  handleDuplicate()
+                }}
+                className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+              >
+                Duplicate
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowDeleteModal(true)
                   setShowMenu(false)
                 }}
                 className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-slate-700 transition-colors"
@@ -247,6 +307,42 @@ export function BlockCard({
       </div>
 
       {renderBlockContent()}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteModal(false)}>
+          <div 
+            className="bg-slate-800 rounded-xl p-6 w-full max-w-sm shadow-xl border border-slate-700"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-500/20 p-2 rounded-full">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white">Delete Block</h3>
+            </div>
+            <p className="text-slate-300 mb-6">
+              Are you sure you want to delete this <span className="font-semibold text-white">{summary.title.toLowerCase()}</span>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -326,8 +422,8 @@ function HotelCard({ block }: { block: HotelBlock }) {
         <CopyField label="Phone" value={block.phone} />
 
         <div className="grid grid-cols-2 gap-4">
-          <CopyField label="Check-in" value={new Date(block.checkInDate).toLocaleDateString()} />
-          <CopyField label="Check-out" value={new Date(block.checkOutDate).toLocaleDateString()} />
+          <CopyField label="Check-in" value={formatDate(block.checkInDate)} />
+          <CopyField label="Check-out" value={formatDate(block.checkOutDate)} />
         </div>
 
         {block.confirmationNumber && (
@@ -410,8 +506,8 @@ function TransportCard({ block }: { block: TransportBlock }) {
           <CopyField label="Company" value={block.company} />
         )}
 
-        <CopyField label="Pickup" value={`${block.pickupLocation} - ${new Date(block.pickupDateTime).toLocaleString()}`} />
-        <CopyField label="Dropoff" value={`${block.dropoffLocation} - ${new Date(block.dropoffDateTime).toLocaleString()}`} />
+        <CopyField label="Pickup" value={`${block.pickupLocation} - ${formatDateTime(block.pickupDateTime)}`} />
+        <CopyField label="Dropoff" value={`${block.dropoffLocation} - ${formatDateTime(block.dropoffDateTime)}`} />
 
         {block.confirmationNumber && (
           <CopyField label="Confirmation" value={block.confirmationNumber} />
@@ -474,8 +570,8 @@ function LayoverCard({ block }: { block: LayoverBlock }) {
 
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-4">
-          <CopyField label="Arrival" value={arrival.toLocaleString()} />
-          <CopyField label="Departure" value={departure.toLocaleString()} />
+          <CopyField label="Arrival" value={formatDateTime(block.arrivalTime)} />
+          <CopyField label="Departure" value={formatDateTime(block.departureTime)} />
         </div>
 
         <div className="bg-slate-900/50 rounded-lg p-3">

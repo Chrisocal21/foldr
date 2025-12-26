@@ -3,16 +3,19 @@
 import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trip } from '@/lib/types'
-import { saveTrip, getTripStatus } from '@/lib/storage'
+import { saveTrip, getTripStatus, PlaceResult, getTimeAtTimezone, getTimezoneAbbr } from '@/lib/storage'
+import { PlaceSearch } from '@/components/PlaceSearch'
 
 export default function NewTripPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
     name: '',
+    destination: '',
     startDate: '',
     endDate: '',
     color: '#3b82f6',
   })
+  const [selectedPlace, setSelectedPlace] = useState<PlaceResult | null>(null)
 
   const colors = [
     { name: 'Blue', value: '#3b82f6' },
@@ -31,6 +34,10 @@ export default function NewTripPage() {
     const trip: Trip = {
       id: crypto.randomUUID(),
       name: formData.name,
+      destination: formData.destination || undefined,
+      latitude: selectedPlace?.latitude,
+      longitude: selectedPlace?.longitude,
+      timezone: selectedPlace?.timezone,
       startDate: formData.startDate,
       endDate: formData.endDate,
       color: formData.color,
@@ -41,6 +48,16 @@ export default function NewTripPage() {
     
     saveTrip(trip)
     router.push(`/trips/${trip.id}`)
+  }
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    setSelectedPlace(place)
+    setFormData(prev => ({
+      ...prev,
+      destination: place.city + (place.country ? `, ${place.country}` : ''),
+      // Auto-fill name if empty
+      name: prev.name || place.city
+    }))
   }
 
   return (
@@ -66,6 +83,33 @@ export default function NewTripPage() {
 
       <main className="container mx-auto px-4 py-8 max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Destination Search */}
+          <div>
+            <label htmlFor="destination" className="block text-sm font-medium text-slate-300 mb-2">
+              Destination
+            </label>
+            <PlaceSearch
+              value={formData.destination}
+              onChange={(value) => setFormData({ ...formData, destination: value })}
+              onPlaceSelect={handlePlaceSelect}
+              placeholder="Search for a city..."
+            />
+            {selectedPlace && (
+              <div className="mt-2 flex items-center gap-4 text-sm">
+                <span className="flex items-center gap-1 text-emerald-400">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </svg>
+                  {getTimezoneAbbr(selectedPlace.timezone)} • {getTimeAtTimezone(selectedPlace.timezone)}
+                </span>
+                <span className="text-slate-500">
+                  Auto-detected timezone
+                </span>
+              </div>
+            )}
+          </div>
+
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-slate-300 mb-2">
               Trip Name

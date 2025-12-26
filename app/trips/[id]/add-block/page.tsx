@@ -809,6 +809,7 @@ function ScreenshotForm({ tripId }: { tripId: string }) {
   const [formData, setFormData] = useState({
     caption: '',
     imageData: '',
+    notes: '',
   })
   const [isProcessing, setIsProcessing] = useState(false)
 
@@ -885,6 +886,14 @@ function ScreenshotForm({ tripId }: { tripId: string }) {
         value={formData.caption}
         onChange={(e) => setFormData({ ...formData, caption: e.target.value })}
         className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <textarea
+        placeholder="Notes (optional)"
+        value={formData.notes}
+        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+        rows={3}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
       />
 
       <button

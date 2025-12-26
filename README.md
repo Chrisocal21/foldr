@@ -1,10 +1,20 @@
 # Foldr
 
-A trip-based information hub. One place to store and reference all travel info.
+A trip-based information hub. One place to store and reference all travel info instead of digging through emails, screenshots, and notes.
 
-## Phase 0: Landing Page ✅
+**Status:** ✅ Live at [foldr-chrisoc.vercel.app](https://foldr-chrisoc.vercel.app)
 
-This is the initial landing page deployment to establish the project structure and Vercel deployment.
+## Features
+
+- 🗂️ **Trip Management** - Create, edit, duplicate trips with color coding
+- ✈️ **Block Types** - Flights, Hotels, Transport, Work, Notes, Screenshots
+- ✅ **Todo System** - Global & trip-specific todos with due dates and priority
+- 🔍 **Search** - Global search across all trips and blocks
+- 📅 **Calendar View** - Month view of all trips
+- 📄 **PDF Export** - Export trip itineraries
+- 🌙 **Dark/Light Theme** - Toggle via settings
+- ⏱️ **Countdown Timer** - Days until/remaining for trips
+- 📱 **Mobile-First** - PWA with offline support
 
 ## Getting Started
 
@@ -47,26 +57,32 @@ npm start
 
 ```
 foldr/
-├── app/
-│   ├── layout.tsx       # Root layout with metadata
-│   ├── page.tsx         # Landing page component
-│   └── globals.css      # Global styles with Tailwind
-├── public/              # Static assets (create as needed)
-├── build.md             # Product specification
-├── package.json         # Dependencies
-├── tsconfig.json        # TypeScript configuration
-├── tailwind.config.js   # Tailwind configuration
-├── next.config.js       # Next.js configuration
-└── README.md            # This file
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx           # Main dashboard
+│   ├── layout.tsx         # Root layout with ThemeProvider
+│   ├── globals.css        # Global styles + theme variables
+│   ├── trips/             # Trip management pages
+│   ├── calendar/          # Calendar view
+│   ├── search/            # Global search
+│   └── backend/           # Image upload tool
+├── components/            # Reusable components
+├── lib/                   # Utilities & types
+├── pages/api/             # API routes (auth, upload)
+└── public/                # Static assets & uploads
 ```
 
-## Next Steps (Phase 1)
+## Documentation
 
-See [build.md](build.md) for the full product roadmap including:
-- Trip management
-- Timeline view with various block types (flights, hotels, etc.)
-- Offline-first PWA capabilities
-- Search functionality
+- [build.md](build.md) - Full product specification
+- [ROADMAP.md](ROADMAP.md) - Feature roadmap & progress
+
+## Tech Stack
+
+- **Framework:** Next.js 15 (App Router)
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS + CSS Variables
+- **Storage:** localStorage (offline-first)
+- **Deployment:** Vercel
 
 ## License
 

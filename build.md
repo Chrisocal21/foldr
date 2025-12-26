@@ -78,6 +78,29 @@ A trip-based information hub. One place to store and reference all travel info i
 - Apple touch icon (180x180)
 - Consistent blue theme color (`#6B9AE8`)
 
+### ✅ Theme & Settings
+- Dark/Light theme toggle via Settings modal (cog icon in header)
+- Theme persists via localStorage
+- CSS variables for consistent theming
+- Settings accessible from main dashboard
+
+### ✅ Trip Enhancements
+- Trip color coding (8 colors: blue, green, purple, orange, pink, teal, red, yellow)
+- Countdown timer showing "X days away" or "X days left"
+- Trips sorted by start date
+- Dates display correctly regardless of timezone
+
+### ✅ Todo Enhancements
+- Optional due dates with date picker
+- Priority levels: Low, Medium, High
+- Visual indicators: colored dots for priority, colored text for due dates
+- Sorting: by priority first, then by due date
+- Overdue items highlighted in red
+
+### ✅ UX Improvements
+- Copy confirmation with "Copied!" text feedback
+- Date parsing fixed to prevent timezone shift issues
+
 ### ✅ Other Features
 - Mobile-first responsive design (iPhone 13+ optimized)
 - Offline-capable (localStorage)
@@ -117,14 +140,19 @@ foldr/
 │   ├── roadmap/           # Roadmap page
 │   └── backend/           # Image upload
 ├── components/            # Reusable components
-│   ├── BlockCard.tsx
-│   ├── ComboBox.tsx
-│   └── CopyField.tsx
+│   ├── BlockCard.tsx      # Block display card
+│   ├── ComboBox.tsx       # Autocomplete input
+│   ├── CopyField.tsx      # Tap-to-copy field
+│   ├── DevNotes.tsx       # Development notes panel
+│   ├── FloatingMenu.tsx   # Bottom floating action menu
+│   ├── GlobalTodos.tsx    # Global todo list panel
+│   └── TripTodos.tsx      # Trip-specific todos
 ├── lib/                   # Utilities
 │   ├── types.ts          # TypeScript interfaces
 │   ├── storage.ts        # localStorage CRUD
 │   ├── travel-data.ts    # Travel data helpers
 │   ├── pdf-export.ts     # PDF generation
+│   ├── theme-context.tsx # Theme provider & hook
 │   └── ocr.ts            # OCR (placeholder)
 ├── pages/api/            # API routes
 │   ├── login.ts          # Auth endpoint

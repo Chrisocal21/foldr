@@ -5,9 +5,15 @@ export type BlockType = 'flight' | 'hotel' | 'layover' | 'work' | 'transport' | 
 export interface Trip {
   id: string
   name: string
+  destination?: string // City/place name
+  latitude?: number // For maps
+  longitude?: number // For maps
   startDate: string // ISO date string
   endDate: string // ISO date string
   color?: string
+  favorite?: boolean
+  archived?: boolean
+  timezone?: string // IANA timezone like 'America/New_York'
   status: TripStatus
   createdAt: string
   updatedAt: string
@@ -87,6 +93,7 @@ export interface ScreenshotBlock extends BaseBlock {
   imageData: string // base64 or blob URL
   caption?: string
   extractedText?: string // OCR extracted text
+  notes?: string
 }
 
 export interface NoteBlock extends BaseBlock {
@@ -97,11 +104,18 @@ export interface NoteBlock extends BaseBlock {
 
 export type Block = FlightBlock | HotelBlock | LayoverBlock | WorkBlock | TransportBlock | ScreenshotBlock | NoteBlock
 
+export type TodoPriority = 'low' | 'medium' | 'high'
+export type TodoStatus = 'todo' | 'in-progress' | 'done'
+
 export interface Todo {
   id: string
   text: string
   completed: boolean
+  status?: TodoStatus // 'todo' | 'in-progress' | 'done'
+  color?: string // hex color for visual tagging
   tripIds: string[] // empty array means "all trips" / general
+  dueDate?: string // ISO date string
+  priority?: TodoPriority
   createdAt: string
   updatedAt: string
 }

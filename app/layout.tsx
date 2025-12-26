@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import { ThemeProvider } from '@/lib/theme-context'
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -32,7 +33,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} dark-theme`}>
       <head>
         <link rel="icon" href="/logos/favicon.ico" sizes="any" />
         <link rel="icon" href="/logos/icon.png" type="image/png" />
@@ -40,7 +41,11 @@ export default function RootLayout({
         <link rel="preconnect" href="https://nominatim.openstreetmap.org" />
         <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org" />
       </head>
-      <body className={`${inter.className} bg-slate-900`}>{children}</body>
+      <body className={`${inter.className} theme-bg-primary`}>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }

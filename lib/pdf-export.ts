@@ -1,6 +1,33 @@
 import jsPDF from 'jspdf'
 import { Trip, Block } from './types'
 
+// Helper to format date string correctly (avoiding timezone issues)
+function formatDate(dateStr: string): string {
+  if (!dateStr) return ''
+  // Handle datetime strings like "2025-01-15T00:00:00.000Z"
+  const datePart = dateStr.split('T')[0]
+  const [year, month, day] = datePart.split('-').map(Number)
+  if (!year || !month || !day) {
+    return dateStr // Return as-is if can't parse
+  }
+  const date = new Date(year, month - 1, day)
+  return date.toLocaleDateString()
+}
+
+// Helper to format datetime string correctly (avoiding timezone issues)
+function formatDateTime(dateTimeStr: string): string {
+  if (!dateTimeStr) return ''
+  // For datetime-local values like "2025-01-15T14:30"
+  const [datePart, timePart] = dateTimeStr.split('T')
+  if (!datePart || !timePart) {
+    return dateTimeStr // Return as-is if can't parse
+  }
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hours, minutes] = timePart.split(':').map(Number)
+  const date = new Date(year, month - 1, day, hours, minutes)
+  return date.toLocaleString()
+}
+
 export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -39,7 +66,7 @@ export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
   addSpace(3)
   
   // Dates
-  addText(`${new Date(trip.startDate).toLocaleDateString()} - ${new Date(trip.endDate).toLocaleDateString()}`, 12)
+  addText(`${formatDate(trip.startDate)} - ${formatDate(trip.endDate)}`, 12)
   addSpace(10)
 
   // Blocks
@@ -52,7 +79,7 @@ export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
         addSpace(3)
         addText(`${block.airline} ${block.flightNumber}`)
         addText(`${block.departureAirport} → ${block.arrivalAirport}`)
-        addText(`${new Date(block.date).toLocaleDateString()} | Depart: ${block.departureTime} | Arrive: ${block.arrivalTime}`)
+        addText(`${formatDate(block.date)} | Depart: ${block.departureTime} | Arrive: ${block.arrivalTime}`)
         if (block.confirmationNumber) addText(`Confirmation: ${block.confirmationNumber}`)
         if (block.seat) addText(`Seat: ${block.seat}`)
         if (block.terminal) addText(`Terminal: ${block.terminal}`)
@@ -65,8 +92,8 @@ export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
         addText(block.name, 10, true)
         addText(block.address)
         addText(`Phone: ${block.phone}`)
-        addText(`Check-in: ${new Date(block.checkInDate).toLocaleDateString()}${block.checkInTime ? ` at ${block.checkInTime}` : ''}`)
-        addText(`Check-out: ${new Date(block.checkOutDate).toLocaleDateString()}${block.checkOutTime ? ` at ${block.checkOutTime}` : ''}`)
+        addText(`Check-in: ${formatDate(block.checkInDate)}${block.checkInTime ? ` at ${block.checkInTime}` : ''}`)
+        addText(`Check-out: ${formatDate(block.checkOutDate)}${block.checkOutTime ? ` at ${block.checkOutTime}` : ''}`)
         if (block.confirmationNumber) addText(`Confirmation: ${block.confirmationNumber}`)
         break
 
@@ -74,8 +101,8 @@ export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
         addText('🕐 LAYOVER', 12, true)
         addSpace(3)
         addText(block.location, 10, true)
-        addText(`Arrival: ${new Date(block.arrivalTime).toLocaleString()}`)
-        addText(`Departure: ${new Date(block.departureTime).toLocaleString()}`)
+        addText(`Arrival: ${formatDateTime(block.arrivalTime)}`)
+        addText(`Departure: ${formatDateTime(block.departureTime)}`)
         if (block.terminal) addText(`Terminal: ${block.terminal}`)
         break
 
@@ -83,8 +110,8 @@ export function exportTripToPDF(trip: Trip, blocks: Block[]): void {
         addText('🚗 TRANSPORT', 12, true)
         addSpace(3)
         addText(`${block.transportType}${block.company ? ` - ${block.company}` : ''}`, 10, true)
-        addText(`Pickup: ${block.pickupLocation} at ${new Date(block.pickupDateTime).toLocaleString()}`)
-        addText(`Dropoff: ${block.dropoffLocation} at ${new Date(block.dropoffDateTime).toLocaleString()}`)
+        addText(`Pickup: ${block.pickupLocation} at ${formatDateTime(block.pickupDateTime)}`)
+        addText(`Dropoff: ${block.dropoffLocation} at ${formatDateTime(block.dropoffDateTime)}`)
         if (block.confirmationNumber) addText(`Confirmation: ${block.confirmationNumber}`)
         break
 

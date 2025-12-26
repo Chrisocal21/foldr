@@ -4,11 +4,231 @@ const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
 const TODOS_KEY = 'foldr_todos'
 
+// Helper to parse date string as local date (avoids UTC timezone shift)
+function parseLocalDate(dateStr: string): Date {
+  const [datePart] = dateStr.split('T')
+  const [year, month, day] = datePart.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+// Format date as "Thu, Dec 25"
+export function formatFriendlyDate(dateStr: string): string {
+  const date = parseLocalDate(dateStr)
+  return date.toLocaleDateString('en-US', { 
+    weekday: 'short', 
+    month: 'short', 
+    day: 'numeric' 
+  })
+}
+
+// Format date as "Dec 25, 2025"
+export function formatFullDate(dateStr: string): string {
+  const date = parseLocalDate(dateStr)
+  return date.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
+// Get relative date string like "in 3 days" or "2 days ago"
+export function formatRelativeDate(dateStr: string): string {
+  const date = parseLocalDate(dateStr)
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  date.setHours(0, 0, 0, 0)
+  
+  const diffTime = date.getTime() - now.getTime()
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24))
+  
+  if (diffDays === 0) return 'today'
+  if (diffDays === 1) return 'tomorrow'
+  if (diffDays === -1) return 'yesterday'
+  if (diffDays > 1 && diffDays <= 7) return `in ${diffDays} days`
+  if (diffDays < -1 && diffDays >= -7) return `${Math.abs(diffDays)} days ago`
+  
+  return formatFriendlyDate(dateStr)
+}
+
+// Get time at a specific timezone
+export function getTimeAtTimezone(timezone: string): string {
+  try {
+    return new Date().toLocaleTimeString('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    })
+  } catch {
+    return ''
+  }
+}
+
+// Get timezone abbreviation (e.g., "EST", "PST")
+export function getTimezoneAbbr(timezone: string): string {
+  try {
+    const parts = new Date().toLocaleTimeString('en-US', {
+      timeZone: timezone,
+      timeZoneName: 'short'
+    }).split(' ')
+    return parts[parts.length - 1] || ''
+  } catch {
+    return ''
+  }
+}
+
+// Common timezones for dropdown
+export const TIMEZONES = [
+  { label: 'US Eastern (New York)', value: 'America/New_York' },
+  { label: 'US Central (Chicago)', value: 'America/Chicago' },
+  { label: 'US Mountain (Denver)', value: 'America/Denver' },
+  { label: 'US Pacific (Los Angeles)', value: 'America/Los_Angeles' },
+  { label: 'US Alaska', value: 'America/Anchorage' },
+  { label: 'US Hawaii', value: 'Pacific/Honolulu' },
+  { label: 'UK (London)', value: 'Europe/London' },
+  { label: 'Central Europe (Paris)', value: 'Europe/Paris' },
+  { label: 'Eastern Europe (Athens)', value: 'Europe/Athens' },
+  { label: 'Dubai', value: 'Asia/Dubai' },
+  { label: 'India (Mumbai)', value: 'Asia/Kolkata' },
+  { label: 'Singapore', value: 'Asia/Singapore' },
+  { label: 'Hong Kong', value: 'Asia/Hong_Kong' },
+  { label: 'Tokyo', value: 'Asia/Tokyo' },
+  { label: 'Sydney', value: 'Australia/Sydney' },
+  { label: 'Auckland', value: 'Pacific/Auckland' },
+  { label: 'Mexico City', value: 'America/Mexico_City' },
+  { label: 'São Paulo', value: 'America/Sao_Paulo' },
+  { label: 'Buenos Aires', value: 'America/Argentina/Buenos_Aires' },
+]
+
+// Place search result type
+export interface PlaceResult {
+  displayName: string
+  city: string
+  country: string
+  latitude: number
+  longitude: number
+  timezone: string
+}
+
+// Timezone lookup by rough coordinates (approximate)
+// Maps regions to timezones based on longitude/latitude
+function getTimezoneFromCoords(lat: number, lon: number): string {
+  // Major city timezone mapping (more accurate than pure coordinate-based)
+  // This covers most travel destinations
+  
+  // Americas
+  if (lon < -50) {
+    if (lat > 40 && lon > -80) return 'America/New_York' // US East Coast
+    if (lat > 40 && lon <= -80 && lon > -100) return 'America/Chicago' // US Central
+    if (lat > 40 && lon <= -100 && lon > -115) return 'America/Denver' // US Mountain
+    if (lat > 40 && lon <= -115) return 'America/Los_Angeles' // US West Coast
+    if (lat > 60) return 'America/Anchorage' // Alaska
+    if (lat < 25 && lat > 15 && lon > -105) return 'America/Mexico_City' // Mexico
+    if (lat < 0 && lon > -60) return 'America/Sao_Paulo' // Brazil
+    if (lat < -30) return 'America/Argentina/Buenos_Aires' // Argentina
+    return 'America/New_York' // Default Americas
+  }
+  
+  // Europe & Africa
+  if (lon >= -10 && lon < 30) {
+    if (lat > 50 && lon < 5) return 'Europe/London' // UK
+    if (lat > 35 && lat < 60 && lon >= 0 && lon < 20) return 'Europe/Paris' // Western Europe
+    if (lat > 35 && lon >= 20) return 'Europe/Athens' // Eastern Europe
+    if (lat < 35 && lat > 0) return 'Africa/Cairo' // North Africa
+    return 'Europe/Paris' // Default Europe
+  }
+  
+  // Middle East & Central Asia
+  if (lon >= 30 && lon < 70) {
+    if (lat > 20 && lat < 35 && lon < 60) return 'Asia/Dubai' // Gulf
+    if (lat > 5 && lat < 35 && lon >= 60) return 'Asia/Kolkata' // India
+    return 'Asia/Dubai' // Default Middle East
+  }
+  
+  // East Asia & Pacific
+  if (lon >= 70) {
+    if (lat > 30 && lon >= 100 && lon < 120) return 'Asia/Hong_Kong' // China
+    if (lat > 0 && lat < 10 && lon > 100 && lon < 110) return 'Asia/Singapore' // Singapore
+    if (lat > 30 && lon >= 120 && lon < 145) return 'Asia/Tokyo' // Japan/Korea
+    if (lat < 0 && lon > 110) return 'Australia/Sydney' // Australia
+    if (lon > 165) return 'Pacific/Auckland' // New Zealand
+    return 'Asia/Tokyo' // Default East Asia
+  }
+  
+  // Hawaii
+  if (lat > 18 && lat < 23 && lon < -150) return 'Pacific/Honolulu'
+  
+  return 'UTC'
+}
+
+// Search for places using OpenStreetMap Nominatim (free, no API key)
+export async function searchPlaces(query: string): Promise<PlaceResult[]> {
+  if (!query || query.length < 2) return []
+  
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?` +
+      `q=${encodeURIComponent(query)}&` +
+      `format=json&` +
+      `addressdetails=1&` +
+      `limit=5&` +
+      `featuretype=city`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Foldr-Travel-App/1.0'
+        }
+      }
+    )
+    
+    if (!response.ok) return []
+    
+    const data = await response.json()
+    
+    return data.map((item: {
+      display_name: string
+      lat: string
+      lon: string
+      address?: {
+        city?: string
+        town?: string
+        village?: string
+        municipality?: string
+        state?: string
+        country?: string
+      }
+    }) => {
+      const lat = parseFloat(item.lat)
+      const lon = parseFloat(item.lon)
+      const addr = item.address || {}
+      const city = addr.city || addr.town || addr.village || addr.municipality || ''
+      const country = addr.country || ''
+      
+      return {
+        displayName: item.display_name,
+        city: city || item.display_name.split(',')[0],
+        country,
+        latitude: lat,
+        longitude: lon,
+        timezone: getTimezoneFromCoords(lat, lon)
+      }
+    })
+  } catch (error) {
+    console.error('Place search error:', error)
+    return []
+  }
+}
+
 // Trips
 export function getTrips(): Trip[] {
   if (typeof window === 'undefined') return []
   const data = localStorage.getItem(TRIPS_KEY)
-  return data ? JSON.parse(data) : []
+  const trips: Trip[] = data ? JSON.parse(data) : []
+  
+  // Sort by start date (earliest first)
+  return trips.sort((a, b) => {
+    return parseLocalDate(a.startDate).getTime() - parseLocalDate(b.startDate).getTime()
+  })
 }
 
 export function saveTrip(trip: Trip): void {
@@ -39,8 +259,10 @@ export function getTripById(tripId: string): Trip | undefined {
 
 export function getTripStatus(startDate: string, endDate: string): TripStatus {
   const now = new Date()
-  const start = new Date(startDate)
-  const end = new Date(endDate)
+  // Set time to start of day for accurate comparison
+  now.setHours(0, 0, 0, 0)
+  const start = parseLocalDate(startDate)
+  const end = parseLocalDate(endDate)
   
   if (now < start) return 'upcoming'
   if (now > end) return 'past'
@@ -61,7 +283,7 @@ export function getBlocksByTripId(tripId: string): Block[] {
       // Sort by date if available
       const dateA = a.date || a.createdAt
       const dateB = b.date || b.createdAt
-      return new Date(dateA).getTime() - new Date(dateB).getTime()
+      return parseLocalDate(dateA).getTime() - parseLocalDate(dateB).getTime()
     })
 }
 
@@ -83,6 +305,22 @@ export function deleteBlock(blockId: string): void {
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
 }
 
+export function duplicateBlock(blockId: string, targetTripId?: string): Block | undefined {
+  const block = getBlockById(blockId)
+  if (!block) return undefined
+  
+  const newBlock: Block = {
+    ...block,
+    id: crypto.randomUUID(),
+    tripId: targetTripId || block.tripId,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }
+  
+  saveBlock(newBlock)
+  return newBlock
+}
+
 export function getBlockById(blockId: string): Block | undefined {
   return getBlocks().find(b => b.id === blockId)
 }
@@ -96,7 +334,7 @@ export function reorderBlocks(tripId: string, blockId: string, direction: 'up' |
   tripBlocks.sort((a, b) => {
     const dateA = a.date || a.createdAt
     const dateB = b.date || b.createdAt
-    return new Date(dateA).getTime() - new Date(dateB).getTime()
+    return parseLocalDate(dateA).getTime() - parseLocalDate(dateB).getTime()
   })
   
   const currentIndex = tripBlocks.findIndex(b => b.id === blockId)

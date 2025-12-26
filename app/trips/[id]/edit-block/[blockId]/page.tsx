@@ -577,10 +577,11 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
 function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId: string }) {
   const router = useRouter()
   const [caption, setCaption] = useState(block.caption || '')
+  const [notes, setNotes] = useState(block.notes || '')
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
-    saveBlock({ ...block, caption, updatedAt: new Date().toISOString() })
+    saveBlock({ ...block, caption, notes, updatedAt: new Date().toISOString() })
     router.push(`/trips/${tripId}`)
   }
 
@@ -600,6 +601,14 @@ function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId:
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
         className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <textarea
+        placeholder="Notes (optional)"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+        rows={3}
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
       />
 
       {block.extractedText && (
