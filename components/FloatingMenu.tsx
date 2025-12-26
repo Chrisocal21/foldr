@@ -561,13 +561,13 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                   </button>
                   {todoColors.map(color => (
                     <button
-                      key={color}
-                      onClick={() => setEditColor(color)}
+                      key={color.value || 'none'}
+                      onClick={() => setEditColor(color.value)}
                       className={`w-7 h-7 rounded-full border-2 transition-all ${
-                        editColor === color ? 'border-white scale-110' : 'border-transparent hover:scale-105'
+                        editColor === color.value ? 'border-white scale-110' : 'border-transparent hover:scale-105'
                       }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
+                      style={{ backgroundColor: color.value || '#3f3f46' }}
+                      title={color.name}
                     />
                   ))}
                 </div>
