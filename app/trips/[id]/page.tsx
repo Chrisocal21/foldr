@@ -10,10 +10,12 @@ import { exportTripToPDF } from '@/lib/pdf-export'
 import FloatingMenu from '@/components/FloatingMenu'
 import { TripMap } from '@/components/TripMap'
 import { WeatherWidget } from '@/components/WeatherWidget'
+import { useSettings } from '@/lib/settings-context'
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const router = useRouter()
+  const { settings } = useSettings()
   const [trip, setTrip] = useState<Trip | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
   const [showMenu, setShowMenu] = useState(false)
@@ -24,6 +26,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [titleValue, setTitleValue] = useState('')
   const [startDateValue, setStartDateValue] = useState('')
   const [endDateValue, setEndDateValue] = useState('')
+  const [currentTemp, setCurrentTemp] = useState<{ temp: number; icon: string } | null>(null)
 
   const colors = [
     { name: 'Blue', value: '#3b82f6' },
@@ -39,6 +42,57 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     loadTripData()
   }, [id])
+
+  // Fetch current temperature
+  useEffect(() => {
+    if (!trip?.latitude || !trip?.longitude) return
+    
+    const fetchCurrentTemp = async () => {
+      try {
+        const response = await fetch(
+          `https://api.open-meteo.com/v1/forecast?` +
+          `latitude=${trip.latitude}&longitude=${trip.longitude}&` +
+          `current=temperature_2m,weather_code&` +
+          `timezone=auto`,
+          { signal: AbortSignal.timeout(10000) }
+        )
+        if (!response.ok) return
+        const data = await response.json()
+        if (data.current) {
+          setCurrentTemp({
+            temp: Math.round(data.current.temperature_2m),
+            icon: getWeatherIcon(data.current.weather_code)
+          })
+        }
+      } catch {
+        // Silently fail - weather is not critical
+      }
+    }
+    
+    fetchCurrentTemp()
+  }, [trip?.latitude, trip?.longitude])
+
+  // Weather icon helper
+  const getWeatherIcon = (code: number): string => {
+    if (code === 0) return '☀️'
+    if (code <= 2) return '🌤️'
+    if (code === 3) return '☁️'
+    if (code <= 48) return '🌫️'
+    if (code <= 67) return '🌧️'
+    if (code <= 77) return '❄️'
+    if (code <= 82) return '🌧️'
+    if (code <= 86) return '🌨️'
+    if (code >= 95) return '⛈️'
+    return '🌡️'
+  }
+
+  // Format temperature based on settings
+  const formatTemp = (celsius: number): string => {
+    if (settings.temperatureUnit === 'fahrenheit') {
+      return `${Math.round((celsius * 9/5) + 32)}°F`
+    }
+    return `${Math.round(celsius)}°C`
+  }
 
   const loadTripData = () => {
     const tripData = getTripById(id)
@@ -354,7 +408,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Timezone Selector */}
-          <div className="mt-3">
+          <div className="mt-3 flex flex-wrap items-center gap-4">
             {editingTimezone ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
@@ -396,6 +450,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   {trip.timezone ? `${getTimezoneAbbr(trip.timezone)} • ${getTimeAtTimezone(trip.timezone)}` : 'Set destination timezone'}
                 </span>
               </button>
+            )}
+            
+            {/* Current Temperature */}
+            {currentTemp && (
+              <div className="flex items-center gap-1.5 text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-lg">
+                <span className="text-lg">{currentTemp.icon}</span>
+                <span className="text-sm font-medium">{formatTemp(currentTemp.temp)}</span>
+                <span className="text-xs text-slate-500">now</span>
+              </div>
             )}
           </div>
         </div>

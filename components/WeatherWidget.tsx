@@ -29,9 +29,10 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
   // Convert temperature based on user settings
   const formatTemp = (celsius: number): string => {
     if (settings.temperatureUnit === 'fahrenheit') {
-      return `${Math.round((celsius * 9/5) + 32)}°`
+      const f = Math.round((celsius * 9/5) + 32)
+      return `${f}°F`
     }
-    return `${Math.round(celsius)}°`
+    return `${Math.round(celsius)}°C`
   }
 
   const fetchWeather = async () => {
@@ -45,7 +46,7 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
         `latitude=${latitude}&longitude=${longitude}&` +
         `daily=weather_code,temperature_2m_max,temperature_2m_min&` +
         `timezone=auto&` +
-        `forecast_days=5`,
+        `forecast_days=${settings.weatherForecastDays}`,
         { signal: AbortSignal.timeout(10000) }
       )
       
@@ -97,8 +98,7 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [latitude, longitude])
+  }, [latitude, longitude, settings.weatherForecastDays])
 
   // Offline state
   if (isOffline) {
@@ -171,11 +171,14 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
         <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
           <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
         </svg>
-        5-Day Forecast
+        {settings.weatherForecastDays}-Day Forecast
         {destination && <span className="text-sm font-normal text-slate-400">• {destination.split(',')[0]}</span>}
       </h3>
       
-      <div className="grid grid-cols-5 gap-2">
+      <div className={`grid gap-2 ${
+        settings.weatherForecastDays === 3 ? 'grid-cols-3' : 
+        settings.weatherForecastDays === 7 ? 'grid-cols-7' : 'grid-cols-5'
+      }`}>
         {forecast.map((day, index) => (
           <div 
             key={day.date} 
@@ -195,7 +198,9 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
 }
 
 function formatDayName(dateStr: string): string {
-  const date = new Date(dateStr)
+  // Parse as local date to avoid timezone issues
+  const [year, month, day] = dateStr.split('-').map(Number)
+  const date = new Date(year, month - 1, day)
   return date.toLocaleDateString('en-US', { weekday: 'short' })
 }
 

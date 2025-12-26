@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/trips/*",
+    "/"
+  ],
+  "exclude": [
+    "/_next/static/*",
+    "/logos/*",
+    "/uploads/*",
+    "/manifest.json",
+    "/BUILD_ID",
+    "/*.ico",
+    "/*.png"
+  ]
+}

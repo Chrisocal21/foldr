@@ -1,17 +1,74 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
-import { useSettings, SUPPORTED_CURRENCIES, TemperatureUnit, DateFormat, TimeFormat } from '@/lib/settings-context'
+import { useRouter } from 'next/navigation'
+import { useSettings, SUPPORTED_CURRENCIES } from '@/lib/settings-context'
+import { AIRLINES, AIRPORTS, HOTEL_CHAINS } from '@/lib/travel-data'
+import { ComboBox } from '@/components/ComboBox'
+import { isLoggedIn, getUserEmail, getLastSyncTime, logout, fullSync } from '@/lib/cloud-sync'
 
 export default function SettingsPage() {
-  const { settings, updateSettings } = useSettings()
+  const router = useRouter()
+  const { settings, updateSettings, exportData, importData, clearAllData } = useSettings()
   const [saved, setSaved] = useState(false)
+  const [showClearModal, setShowClearModal] = useState(false)
+  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Account state
+  const [loggedIn, setLoggedIn] = useState(false)
+  const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [lastSync, setLastSync] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  
+  useEffect(() => {
+    setLoggedIn(isLoggedIn())
+    setUserEmail(getUserEmail())
+    setLastSync(getLastSyncTime())
+  }, [])
 
-  const handleChange = (key: string, value: string) => {
+  const handleSync = async () => {
+    setSyncing(true)
+    await fullSync()
+    setLastSync(getLastSyncTime())
+    setSyncing(false)
+  }
+
+  const handleLogout = () => {
+    logout()
+    setLoggedIn(false)
+    setUserEmail(null)
+    router.push('/auth')
+  }
+
+  const handleChange = (key: string, value: string | number | boolean) => {
     updateSettings({ [key]: value })
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
+  }
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      const success = importData(content)
+      setImportStatus(success ? 'success' : 'error')
+      setTimeout(() => setImportStatus('idle'), 3000)
+      if (success) {
+        window.location.reload()
+      }
+    }
+    reader.readAsText(file)
+  }
+
+  const handleClearAllData = () => {
+    clearAllData()
+    setShowClearModal(false)
+    router.push('/')
   }
 
   return (
@@ -32,16 +89,109 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 max-w-2xl">
+      <main className="container mx-auto px-4 py-8 max-w-2xl pb-24">
         {/* Save indicator */}
         {saved && (
-          <div className="fixed top-20 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-fade-in z-50">
+          <div className="fixed top-20 right-4 bg-green-600 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M5 13l4 4L19 7" />
             </svg>
             Settings saved
           </div>
         )}
+
+        {/* Import status */}
+        {importStatus !== 'idle' && (
+          <div className={`fixed top-20 right-4 ${importStatus === 'success' ? 'bg-green-600' : 'bg-red-600'} text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 z-50`}>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              {importStatus === 'success' ? <path d="M5 13l4 4L19 7" /> : <path d="M6 18L18 6M6 6l12 12" />}
+            </svg>
+            {importStatus === 'success' ? 'Data imported!' : 'Import failed'}
+          </div>
+        )}
+
+        {/* Account Section */}
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z" />
+            </svg>
+            Account & Sync
+          </h2>
+          
+          <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
+            {loggedIn ? (
+              <>
+                {/* Logged in state */}
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">{userEmail}</p>
+                      <p className="text-sm text-slate-400">Signed in</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                      <span className="text-sm text-green-400">Connected</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Sync status */}
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Sync</p>
+                    <p className="text-sm text-slate-400">
+                      {lastSync 
+                        ? `Last synced ${new Date(lastSync).toLocaleString()}`
+                        : 'Not synced yet'
+                      }
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" />
+                    </svg>
+                    {syncing ? 'Syncing...' : 'Sync Now'}
+                  </button>
+                </div>
+                
+                {/* Logout */}
+                <div className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Sign Out</p>
+                    <p className="text-sm text-slate-400">Your data stays on this device</p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* Not logged in */
+              <div className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-white font-medium">Not signed in</p>
+                    <p className="text-sm text-slate-400">Sign in to sync across devices</p>
+                  </div>
+                  <Link
+                    href="/auth"
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
 
         {/* Units Section */}
         <section className="mb-8">
@@ -57,15 +207,31 @@ export default function SettingsPage() {
             <div className="p-4 flex items-center justify-between">
               <div>
                 <p className="text-white font-medium">Temperature</p>
-                <p className="text-sm text-slate-400">Display temperature in weather widgets</p>
+                <p className="text-sm text-slate-400">Weather display</p>
               </div>
               <select
                 value={settings.temperatureUnit}
                 onChange={(e) => handleChange('temperatureUnit', e.target.value)}
                 className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="fahrenheit">Fahrenheit (°F)</option>
-                <option value="celsius">Celsius (°C)</option>
+                <option value="fahrenheit">°F Fahrenheit</option>
+                <option value="celsius">°C Celsius</option>
+              </select>
+            </div>
+
+            {/* Distance */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Distance</p>
+                <p className="text-sm text-slate-400">Miles or km</p>
+              </div>
+              <select
+                value={settings.distanceUnit}
+                onChange={(e) => handleChange('distanceUnit', e.target.value)}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="miles">Miles</option>
+                <option value="kilometers">Kilometers</option>
               </select>
             </div>
 
@@ -73,16 +239,16 @@ export default function SettingsPage() {
             <div className="p-4 flex items-center justify-between">
               <div>
                 <p className="text-white font-medium">Date Format</p>
-                <p className="text-sm text-slate-400">How dates are displayed</p>
+                <p className="text-sm text-slate-400">Display style</p>
               </div>
               <select
                 value={settings.dateFormat}
                 onChange={(e) => handleChange('dateFormat', e.target.value)}
                 className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="mdy">Dec 25, 2025 (MDY)</option>
-                <option value="dmy">25 Dec 2025 (DMY)</option>
-                <option value="ymd">2025/12/25 (YMD)</option>
+                <option value="mdy">Dec 25, 2025</option>
+                <option value="dmy">25 Dec 2025</option>
+                <option value="ymd">2025/12/25</option>
               </select>
             </div>
 
@@ -90,7 +256,7 @@ export default function SettingsPage() {
             <div className="p-4 flex items-center justify-between">
               <div>
                 <p className="text-white font-medium">Time Format</p>
-                <p className="text-sm text-slate-400">12-hour or 24-hour clock</p>
+                <p className="text-sm text-slate-400">Clock style</p>
               </div>
               <select
                 value={settings.timeFormat}
@@ -101,86 +267,348 @@ export default function SettingsPage() {
                 <option value="24h">24-hour (14:30)</option>
               </select>
             </div>
-          </div>
-        </section>
 
-        {/* Currency Section */}
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-            </svg>
-            Currency
-          </h2>
-          
-          <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
             {/* Default Currency */}
             <div className="p-4 flex items-center justify-between">
               <div>
-                <p className="text-white font-medium">Default Currency</p>
-                <p className="text-sm text-slate-400">Pre-selected currency for new expenses</p>
+                <p className="text-white font-medium">Currency</p>
+                <p className="text-sm text-slate-400">Default for expenses</p>
               </div>
               <select
                 value={settings.defaultCurrency}
                 onChange={(e) => handleChange('defaultCurrency', e.target.value)}
                 className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {SUPPORTED_CURRENCIES.map(currency => (
-                  <option key={currency.code} value={currency.code}>
-                    {currency.symbol} {currency.code} - {currency.name}
-                  </option>
+                {SUPPORTED_CURRENCIES.map(c => (
+                  <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
                 ))}
               </select>
             </div>
           </div>
         </section>
 
-        {/* Preview Section */}
+        {/* Display Section */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <svg className="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-              <circle cx="12" cy="12" r="3" />
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <path d="M3 9h18M9 21V9" />
             </svg>
-            Preview
+            Display & Calendar
           </h2>
           
-          <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-            <div className="grid gap-4 text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Temperature 25°C displays as:</span>
-                <span className="text-white font-medium">
-                  {settings.temperatureUnit === 'fahrenheit' ? '77°F' : '25°C'}
-                </span>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
+            {/* First Day of Week */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Week Starts</p>
+                <p className="text-sm text-slate-400">Calendar first day</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Date Dec 25, 2025 displays as:</span>
-                <span className="text-white font-medium">
-                  {settings.dateFormat === 'mdy' ? 'Dec 25, 2025' : 
-                   settings.dateFormat === 'dmy' ? '25 Dec 2025' : '2025/12/25'}
-                </span>
+              <select
+                value={settings.firstDayOfWeek}
+                onChange={(e) => handleChange('firstDayOfWeek', e.target.value)}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="sunday">Sunday</option>
+                <option value="monday">Monday</option>
+              </select>
+            </div>
+
+            {/* Weather Forecast Days */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Weather Days</p>
+                <p className="text-sm text-slate-400">Forecast length</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Time 14:30 displays as:</span>
-                <span className="text-white font-medium">
-                  {settings.timeFormat === '12h' ? '2:30 PM' : '14:30'}
-                </span>
+              <select
+                value={settings.weatherForecastDays}
+                onChange={(e) => handleChange('weatherForecastDays', parseInt(e.target.value))}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={3}>3 days</option>
+                <option value={5}>5 days</option>
+                <option value={7}>7 days</option>
+              </select>
+            </div>
+
+            {/* Map Default Zoom */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Map Zoom</p>
+                <p className="text-sm text-slate-400">Default level</p>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Default currency symbol:</span>
-                <span className="text-white font-medium">
-                  {SUPPORTED_CURRENCIES.find(c => c.code === settings.defaultCurrency)?.symbol || '$'}
-                </span>
+              <select
+                value={settings.mapDefaultZoom}
+                onChange={(e) => handleChange('mapDefaultZoom', parseInt(e.target.value))}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={10}>City view</option>
+                <option value={12}>Neighborhood</option>
+                <option value={14}>Street level</option>
+                <option value={16}>Close up</option>
+              </select>
+            </div>
+
+            {/* Trip Sort Order */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Sort Trips</p>
+                <p className="text-sm text-slate-400">List order</p>
               </div>
+              <select
+                value={settings.tripSortOrder}
+                onChange={(e) => handleChange('tripSortOrder', e.target.value)}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="date">By date</option>
+                <option value="name">By name</option>
+                <option value="favorites">Favorites first</option>
+              </select>
+            </div>
+
+            {/* Show Trip Countdown */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Countdown</p>
+                <p className="text-sm text-slate-400">Days until trip</p>
+              </div>
+              <button
+                onClick={() => handleChange('showTripCountdown', !settings.showTripCountdown)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${settings.showTripCountdown ? 'bg-blue-600' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.showTripCountdown ? 'left-7' : 'left-1'}`} />
+              </button>
+            </div>
+
+            {/* Compact Mode */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Compact Mode</p>
+                <p className="text-sm text-slate-400">Denser layout</p>
+              </div>
+              <button
+                onClick={() => handleChange('compactMode', !settings.compactMode)}
+                className={`relative w-12 h-6 rounded-full transition-colors ${settings.compactMode ? 'bg-blue-600' : 'bg-slate-600'}`}
+              >
+                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.compactMode ? 'left-7' : 'left-1'}`} />
+              </button>
             </div>
           </div>
         </section>
 
-        {/* Info */}
+        {/* Trip Defaults Section */}
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5Z" />
+            </svg>
+            Trip Defaults
+          </h2>
+          
+          <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
+            {/* Default Trip Duration */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Trip Length</p>
+                <p className="text-sm text-slate-400">Default duration</p>
+              </div>
+              <select
+                value={settings.defaultTripDuration}
+                onChange={(e) => handleChange('defaultTripDuration', parseInt(e.target.value))}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={3}>3 days</option>
+                <option value={5}>5 days</option>
+                <option value={7}>1 week</option>
+                <option value={10}>10 days</option>
+                <option value={14}>2 weeks</option>
+              </select>
+            </div>
+
+            {/* Auto Archive */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Auto-Archive</p>
+                <p className="text-sm text-slate-400">Hide past trips</p>
+              </div>
+              <select
+                value={settings.autoArchiveDays}
+                onChange={(e) => handleChange('autoArchiveDays', parseInt(e.target.value))}
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={0}>Never</option>
+                <option value={7}>After 1 week</option>
+                <option value={30}>After 1 month</option>
+                <option value={90}>After 3 months</option>
+              </select>
+            </div>
+
+            {/* Default Airline */}
+            <div className="p-4">
+              <div className="mb-2">
+                <p className="text-white font-medium">Default Airline</p>
+                <p className="text-sm text-slate-400">Pre-fill flights</p>
+              </div>
+              <ComboBox
+                value={settings.defaultAirline}
+                onChange={(value) => handleChange('defaultAirline', value)}
+                options={AIRLINES}
+                placeholder="Select airline..."
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+              />
+            </div>
+
+            {/* Default Hotel Chain */}
+            <div className="p-4">
+              <div className="mb-2">
+                <p className="text-white font-medium">Default Hotel</p>
+                <p className="text-sm text-slate-400">Pre-fill hotels</p>
+              </div>
+              <ComboBox
+                value={settings.defaultHotelChain}
+                onChange={(value) => handleChange('defaultHotelChain', value)}
+                options={HOTEL_CHAINS}
+                placeholder="Select hotel chain..."
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+              />
+            </div>
+
+            {/* Home Airport */}
+            <div className="p-4">
+              <div className="mb-2">
+                <p className="text-white font-medium">Home Airport</p>
+                <p className="text-sm text-slate-400">Your primary airport</p>
+              </div>
+              <ComboBox
+                value={settings.homeAirport}
+                onChange={(value) => handleChange('homeAirport', value)}
+                options={AIRPORTS}
+                placeholder="Select airport..."
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Data Management Section */}
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+            <svg className="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M4 22h14a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v4" />
+              <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+              <path d="M3 15h6M6 12v6" />
+            </svg>
+            Data Management
+          </h2>
+          
+          <div className="bg-slate-800 rounded-xl border border-slate-700 divide-y divide-slate-700">
+            {/* Export Data */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Export Data</p>
+                <p className="text-sm text-slate-400">Download backup</p>
+              </div>
+              <button
+                onClick={exportData}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                </svg>
+                Export
+              </button>
+            </div>
+
+            {/* Import Data */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Import Data</p>
+                <p className="text-sm text-slate-400">Restore backup</p>
+              </div>
+              <input
+                type="file"
+                accept=".json"
+                onChange={handleImport}
+                ref={fileInputRef}
+                className="hidden"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+                Import
+              </button>
+            </div>
+
+            {/* Clear All Data */}
+            <div className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-white font-medium">Clear All Data</p>
+                <p className="text-sm text-slate-400">Reset everything</p>
+              </div>
+              <button
+                onClick={() => setShowClearModal(true)}
+                className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                </svg>
+                Clear
+              </button>
+            </div>
+          </div>
+        </section>
+
         <p className="text-center text-slate-500 text-sm">
-          Settings are saved automatically and sync across this device.
+          Settings save automatically
         </p>
       </main>
+
+      {/* Clear All Data Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowClearModal(false)}>
+          <div 
+            className="bg-slate-800 rounded-xl p-6 w-full max-w-sm shadow-xl border border-slate-700"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-red-500/20 p-2 rounded-full">
+                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-white">Clear All Data?</h3>
+            </div>
+            <p className="text-slate-300 mb-2">This will delete:</p>
+            <ul className="text-slate-400 text-sm mb-4 list-disc list-inside space-y-1">
+              <li>All trips and blocks</li>
+              <li>All to-dos and notes</li>
+              <li>All packing lists and expenses</li>
+              <li>All settings</li>
+            </ul>
+            <p className="text-red-400 text-sm mb-6 font-medium">
+              This cannot be undone!
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="px-4 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearAllData}
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors"
+              >
+                Clear Everything
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

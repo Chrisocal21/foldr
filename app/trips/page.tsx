@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Trip } from '@/lib/types'
 import { getTrips, getTripStatus, saveTrip, deleteTrip, getTimeAtTimezone, getTimezoneAbbr } from '@/lib/storage'
+import { useSettings } from '@/lib/settings-context'
 
 export default function TripsPage() {
+  const { settings } = useSettings()
   const [trips, setTrips] = useState<Trip[]>([])
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'active' | 'past'>('all')
   const [hidePast, setHidePast] = useState(false)
@@ -50,11 +52,21 @@ export default function TripsPage() {
     localStorage.setItem('foldr_hide_past', String(newValue))
   }
 
-  // Sort: favorites first, then by date
+  // Sort trips based on settings
   const sortedTrips = [...trips].sort((a, b) => {
-    if (a.favorite && !b.favorite) return -1
-    if (!a.favorite && b.favorite) return 1
-    return 0
+    // Always respect favorites-first if setting is 'favorites'
+    if (settings.tripSortOrder === 'favorites') {
+      if (a.favorite && !b.favorite) return -1
+      if (!a.favorite && b.favorite) return 1
+    }
+    
+    // Secondary sort by name or date
+    if (settings.tripSortOrder === 'name') {
+      return (a.destination || '').localeCompare(b.destination || '')
+    }
+    
+    // Default: sort by date
+    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
   })
 
   // Apply filters
@@ -62,9 +74,16 @@ export default function TripsPage() {
     filter === 'all' || trip.status === filter
   )
   
-  // Hide past trips if enabled
+  // Hide past trips if enabled OR auto-archive setting
   if (hidePast && filter === 'all') {
     filteredTrips = filteredTrips.filter(t => t.status !== 'past')
+  } else if (settings.autoArchiveDays > 0 && filter === 'all') {
+    const archiveDate = new Date()
+    archiveDate.setDate(archiveDate.getDate() - settings.autoArchiveDays)
+    filteredTrips = filteredTrips.filter(t => {
+      if (t.status !== 'past') return true
+      return new Date(t.endDate) > archiveDate
+    })
   }
 
   const upcomingCount = trips.filter(t => t.status === 'upcoming').length
@@ -75,65 +94,65 @@ export default function TripsPage() {
     <div className="min-h-screen bg-slate-950">
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800">
-        <div className="container mx-auto px-4 py-5 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href="/">
             <img 
               src="/logos/logo.png" 
               alt="Foldr" 
-              className="h-12 w-auto"
+              className="h-10 w-auto"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                target.insertAdjacentHTML('afterend', '<span class="text-2xl font-bold" style="color: #6B9AE8">Foldr</span>');
+                target.insertAdjacentHTML('afterend', '<span class="text-xl font-bold" style="color: #6B9AE8">Foldr</span>');
               }}
             />
           </Link>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-1 sm:gap-3">
             <Link
               href="/calendar"
-              className="text-slate-300 hover:text-white p-2"
+              className="text-slate-400 hover:text-white p-1.5 sm:p-2"
               title="Calendar View"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <rect x="3" y="4" width="18" height="18" rx="2" />
                 <path d="M16 2v4M8 2v4M3 10h18" />
               </svg>
             </Link>
             <Link
               href="/stats"
-              className="text-slate-300 hover:text-white p-2"
+              className="text-slate-400 hover:text-white p-1.5 sm:p-2"
               title="Statistics"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </Link>
             <Link
               href="/search"
-              className="text-slate-300 hover:text-white p-2"
+              className="text-slate-400 hover:text-white p-1.5 sm:p-2"
               title="Search"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="11" cy="11" r="8" />
                 <path d="m21 21-4.35-4.35" />
               </svg>
             </Link>
             <Link
               href="/settings"
-              className="text-slate-300 hover:text-white p-2"
+              className="text-slate-400 hover:text-white p-1.5 sm:p-2"
               title="Settings"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
                 <circle cx="12" cy="12" r="3" />
               </svg>
             </Link>
             <Link
               href="/trips/new"
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-800 transition-colors"
               title="New Trip"
             >
-              <svg className="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v8M8 12h8" />
               </svg>
@@ -236,6 +255,7 @@ export default function TripsPage() {
                 trip={trip} 
                 onToggleFavorite={toggleFavorite}
                 onDelete={(t) => setDeleteModal({ show: true, trip: t })}
+                showCountdown={settings.showTripCountdown}
               />
             ))}
           </div>
@@ -312,11 +332,13 @@ function FilterButton({
 function TripCard({ 
   trip, 
   onToggleFavorite, 
-  onDelete 
+  onDelete,
+  showCountdown = true
 }: { 
   trip: Trip
   onToggleFavorite: (tripId: string, e: React.MouseEvent) => void
   onDelete: (trip: Trip) => void
+  showCountdown?: boolean
 }) {
   // Parse dates as local to avoid timezone issues
   const parseLocalDate = (dateStr: string) => {
@@ -453,7 +475,7 @@ function TripCard({
               <span>{getTimeAtTimezone(trip.timezone)} {getTimezoneAbbr(trip.timezone)}</span>
             </div>
           )}
-          {countdown && (
+          {countdown && showCountdown && (
             <div className="flex items-center gap-2 text-blue-400">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="10" />

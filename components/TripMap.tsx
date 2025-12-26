@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { useOnline } from '@/lib/offline'
+import { useSettings } from '@/lib/settings-context'
 
 interface TripMapProps {
   latitude: number
@@ -17,6 +18,7 @@ export function TripMap({ latitude, longitude, destination, className = '' }: Tr
   const [isLoaded, setIsLoaded] = useState(false)
   const [loadError, setLoadError] = useState(false)
   const isOnline = useOnline()
+  const { settings } = useSettings()
 
   useEffect(() => {
     // Only run on client
@@ -39,7 +41,7 @@ export function TripMap({ latitude, longitude, destination, className = '' }: Tr
         const map = L.map(mapRef.current, {
           scrollWheelZoom: false,
           zoomControl: true,
-        }).setView([latitude, longitude], 10)
+        }).setView([latitude, longitude], settings.mapDefaultZoom)
 
         // Add tile layer with error handling
         const tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -90,7 +92,7 @@ export function TripMap({ latitude, longitude, destination, className = '' }: Tr
         mapInstanceRef.current = null
       }
     }
-  }, [latitude, longitude, destination, isOnline])
+  }, [latitude, longitude, destination, isOnline, settings.mapDefaultZoom])
 
   // Offline state
   if (!isOnline || loadError) {

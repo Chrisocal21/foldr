@@ -1,0 +1,9 @@
+name = "foldr"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".open-next"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "foldr-db"
+database_id = "430628c9-2002-4237-8db4-5830c74b388b"
