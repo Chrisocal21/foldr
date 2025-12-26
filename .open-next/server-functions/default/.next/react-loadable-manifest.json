@@ -1,10 +1,4 @@
 {
-  "app\\page.tsx -> ./login": {
-    "id": 97171,
-    "files": [
-      "static/chunks/171.91288bf0366e54d6.js"
-    ]
-  },
   "components\\TripMap.tsx -> leaflet": {
     "id": 85752,
     "files": [

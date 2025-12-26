@@ -88,12 +88,6 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
-      "page": "/auth",
-      "regex": "^/auth(?:/)?$",
-      "routeKeys": {},
-      "namedRegex": "^/auth(?:/)?$"
-    },
-    {
       "page": "/backend",
       "regex": "^/backend(?:/)?$",
       "routeKeys": {},
