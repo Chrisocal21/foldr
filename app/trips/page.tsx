@@ -99,12 +99,12 @@ export default function TripsPage() {
           <Link href="/">
             <img 
               src="/logos/logo.png" 
-              alt="Foldr" 
+              alt="TripFldr" 
               className="h-10 w-auto"
               onError={(e) => {
                 const target = e.target as HTMLImageElement;
                 target.style.display = 'none';
-                target.insertAdjacentHTML('afterend', '<span class="text-xl font-bold" style="color: #6B9AE8">Foldr</span>');
+                target.insertAdjacentHTML('afterend', '<span class="text-xl font-bold" style="color: #6B9AE8">TripFldr</span>');
               }}
             />
           </Link>
