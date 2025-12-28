@@ -12,13 +12,13 @@ const inter = Inter({
 })
 
 export const metadata: Metadata = {
-  title: 'Foldr - Your Trip Information Hub',
+  title: 'TripFldr - Your Trip Information Hub',
   description: 'One place to store and reference all your travel info',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Foldr'
+    title: 'TripFldr'
   }
 }
 

@@ -158,7 +158,7 @@ export default function BuildPage() {
           <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
           <span className="text-green-400 font-medium">Live</span>
         </div>
-        <p className="text-slate-300 mt-1">Deployed at foldr-chrisoc.vercel.app</p>
+        <p className="text-slate-300 mt-1">Deployed at tripfldr.com</p>
       </div>
 
       {/* Tech Stack */}

@@ -1,6 +1,6 @@
-# Foldr - Roadmap
+# TripFldr - Roadmap
 
-**Last Updated:** December 25, 2025
+**Last Updated:** December 28, 2025
 
 ---
 
@@ -39,6 +39,11 @@
 | Trip Statistics | Total trips, days traveled, cities visited, expenses |
 | Weather Widget | 5-day forecast using Open-Meteo (free, no API key) |
 | Offline Mode | Proper offline detection, no mock data, graceful degradation |
+| **Cloud Sync** | ✅ Cross-device sync via Cloudflare D1 database |
+| **User Accounts** | ✅ Email/password authentication with invite codes |
+| **Auto-Sync** | ✅ Automatic sync on data changes (debounced 2s) |
+| **Sync Deletions** | ✅ Deleted items properly removed from cloud |
+| **FloatingMenu on Trips** | ✅ Notes, Todo, Build, Roadmap accessible from /trips page |
 
 ---
 
@@ -49,8 +54,8 @@ Solid features that add real value.
 | Feature | Time | Why |
 |---------|------|-----|
 | **Export to Calendar** | 3-4 hrs | Generate .ics file for Google/Apple Calendar |
-| **Weather Widget** | 4-6 hrs | 5-day forecast at destination (OpenWeatherMap free) |
-| **Trip Statistics** | 3 hrs | Total trips, days traveled, cities visited this year |
+| **Trip Sharing** | 4-6 hrs | Generate read-only link for companions |
+| **Push Notifications** | 6-8 hrs | "Flight in 2 hours" reminders (PWA) |
 
 ---
 
@@ -60,7 +65,7 @@ Major features requiring significant work.
 
 | Feature | Time | Why | Cost |
 |---------|------|-----|------|
-| **Cloud Sync** | 2-3 days | Sync across devices, backup data | $0-25/mo (Supabase) |
+| ~~**Cloud Sync**~~ | ~~2-3 days~~ | ~~Sync across devices, backup data~~ | ✅ DONE |
 | **Trip Sharing** | 1-2 days | Generate read-only link for companions | Free |
 | **Push Notifications** | 6-8 hrs | "Flight in 2 hours" reminders | Free (PWA) |
 
@@ -82,12 +87,17 @@ Major features requiring significant work.
 3. ~~Expense tracker~~ ✅
 4. ~~Maps integration~~ ✅
 
-### Phase 4 - Scale (Next)
+### Phase 4 - Scale ✅ COMPLETE
 1. ~~Trip statistics~~ ✅
 2. ~~Weather widget~~ ✅
 3. ~~Offline optimization~~ ✅
-4. Cloud sync (Cloudflare)
-5. Calendar export
+4. ~~Cloud sync (Cloudflare D1)~~ ✅
+5. Calendar export (next)
+
+### Phase 5 - Next
+1. Calendar export (.ics files)
+2. Trip sharing (read-only links)
+3. Push notifications (PWA)
 
 ---
 
@@ -168,3 +178,14 @@ Review these - some may be useful, some are probably overkill.
 - Hide past trips toggle
 - Block duplicate functionality
 - Notes on all block types
+
+### Phase 5 - Cloud Sync (Dec 27, 2025)
+- Cloudflare D1 database integration
+- User authentication (email/password)
+- Invite code system for signups
+- Token-based session management
+- Auto-sync on data changes (2s debounce)
+- Cross-device sync (trips, blocks, todos, packing, expenses)
+- Proper deletion sync (removes from cloud)
+- Login/signup/password reset flows
+- FloatingMenu available on /trips page

@@ -8,15 +8,22 @@ const TODOS_KEY = 'foldr_todos'
 // Debounced sync to avoid too many API calls
 let syncTimeout: ReturnType<typeof setTimeout> | null = null
 function triggerSync() {
+  console.log('[Sync] triggerSync called')
   // Only run on client side
-  if (typeof window === 'undefined') return
-  if (!isLoggedIn()) {
+  if (typeof window === 'undefined') {
+    console.log('[Sync] Not in browser, skipping')
+    return
+  }
+  const loggedIn = isLoggedIn()
+  console.log('[Sync] isLoggedIn:', loggedIn)
+  if (!loggedIn) {
     console.log('[Sync] Not logged in, skipping sync')
     return
   }
   
   // Debounce: wait 2 seconds after last change before syncing
   if (syncTimeout) clearTimeout(syncTimeout)
+  console.log('[Sync] Setting 2s timeout for sync...')
   syncTimeout = setTimeout(async () => {
     console.log('[Sync] Starting cloud sync...')
     const result = await syncToCloud()
@@ -266,6 +273,7 @@ export function getTrips(): Trip[] {
 }
 
 export function saveTrip(trip: Trip): void {
+  console.log('[Storage] saveTrip called for:', trip.name)
   const trips = getTrips()
   const index = trips.findIndex(t => t.id === trip.id)
   
@@ -276,6 +284,7 @@ export function saveTrip(trip: Trip): void {
   }
   
   localStorage.setItem(TRIPS_KEY, JSON.stringify(trips))
+  console.log('[Storage] Calling triggerSync...')
   triggerSync()
 }
 

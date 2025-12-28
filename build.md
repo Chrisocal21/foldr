@@ -1,23 +1,33 @@
-# Foldr
+# TripFldr
 
 A trip-based information hub. One place to store and reference all travel info instead of digging through emails, screenshots, and notes.
 
-**Status:** ✅ Live at [foldr-chrisoc.vercel.app](https://foldr-chrisoc.vercel.app)
+**Status:** ✅ Live at [tripfldr.com](https://tripfldr.com)
 
-**Last Updated:** December 25, 2025
+**Last Updated:** December 28, 2025
 
 ---
 
 ## Current Features (Implemented)
 
-### ✅ Authentication
+### ✅ Authentication & Cloud Sync
+- User accounts with email/password authentication
+- Invite code system for controlled signups
+- Token-based session management (stored in Cloudflare D1)
+- Cross-device sync via Cloudflare D1 database
+- Auto-sync on data changes (2-second debounce)
+- Sync includes: trips, blocks, todos, packing items, expenses, settings
+- Proper deletion sync (deleted items removed from cloud)
+- Login/signup/logout/password reset flows
+- Offline-first with cloud backup
+
+### ✅ Legacy Authentication (deprecated)
 - Login page with secure credentials (server-side env vars: `APP_USER`, `APP_PASS`)
 - Session persistence via localStorage
 - Eye toggle to show/hide password
-- Better error messages (server config vs invalid credentials)
 
 ### ✅ Main Dashboard
-- Custom Foldr logo (with fallback text)
+- Custom TripFldr logo (with fallback text)
 - Real-time clock and date display (formatted: "Wed, Dec 25")
 - GPS location with reverse geocoding (shows "City, State" format)
 - Quick access to trips via + icon
@@ -58,7 +68,7 @@ A trip-based information hub. One place to store and reference all travel info i
 ### ✅ Pages
 | Page | Route | Description |
 |------|-------|-------------|
-| Home | `/` | Main dashboard with clock, location, trips, todos |
+| Home | `/` | Login/signup page (redirects to /trips if logged in) |
 | Trips | `/trips` | Trip list with filters (All/Upcoming/Active/Past) |
 | Trip Detail | `/trips/[id]` | View trip blocks, inline editing, todos |
 | New Trip | `/trips/new` | Create new trip |
@@ -67,6 +77,8 @@ A trip-based information hub. One place to store and reference all travel info i
 | Duplicate Trip | `/trips/[id]/duplicate` | Duplicate a trip |
 | Calendar | `/calendar` | Month view of trips |
 | Search | `/search` | Global search |
+| Stats | `/stats` | Trip statistics dashboard |
+| Settings | `/settings` | Account, sync, theme, data management |
 | Build Spec | `/build` | This documentation (viewable) |
 | Roadmap | `/roadmap` | Future features roadmap |
 | Backend | `/backend` | Image upload tool |
@@ -113,13 +125,17 @@ A trip-based information hub. One place to store and reference all travel info i
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
-| Next.js | 15.5.9 | React framework (App Router) |
+| Next.js | 15.4.10 | React framework (App Router) |
 | React | 19 | UI library |
 | TypeScript | 5.x | Type safety |
 | Tailwind CSS | 3.x | Styling |
+| Cloudflare Pages | - | Hosting & deployment |
+| Cloudflare D1 | - | SQLite database for cloud sync |
+| @opennextjs/cloudflare | - | Next.js adapter for Cloudflare |
 | localStorage | - | Offline data storage |
 | Nominatim API | - | Free reverse geocoding |
-| Vercel | - | Hosting & deployment |
+| Open-Meteo API | - | Weather forecasts (free, no key) |
+| Leaflet | - | Maps integration |
 | GitHub | - | Version control |
 
 ---
@@ -129,13 +145,24 @@ A trip-based information hub. One place to store and reference all travel info i
 ```
 foldr/
 ├── app/                    # Next.js App Router pages
-│   ├── page.tsx           # Main dashboard
+│   ├── page.tsx           # Main dashboard (login/signup)
 │   ├── layout.tsx         # Root layout with meta
 │   ├── login.tsx          # Login component
 │   ├── globals.css        # Global styles
+│   ├── api/               # API routes
+│   │   ├── auth/          # Authentication endpoints
+│   │   │   ├── login/     # POST /api/auth/login
+│   │   │   ├── signup/    # POST /api/auth/signup
+│   │   │   ├── change-password/
+│   │   │   └── reset-password/
+│   │   └── sync/          # Cloud sync endpoints
+│   │       ├── push/      # POST /api/sync/push
+│   │       └── pull/      # GET /api/sync/pull
 │   ├── trips/             # Trip pages
 │   ├── calendar/          # Calendar view
 │   ├── search/            # Search page
+│   ├── stats/             # Statistics page
+│   ├── settings/          # Settings page
 │   ├── build/             # Build spec page
 │   ├── roadmap/           # Roadmap page
 │   └── backend/           # Image upload
@@ -144,23 +171,35 @@ foldr/
 │   ├── ComboBox.tsx       # Autocomplete input
 │   ├── CopyField.tsx      # Tap-to-copy field
 │   ├── DevNotes.tsx       # Development notes panel
+│   ├── ExpenseTracker.tsx # Expense tracking component
 │   ├── FloatingMenu.tsx   # Bottom floating action menu
 │   ├── GlobalTodos.tsx    # Global todo list panel
-│   └── TripTodos.tsx      # Trip-specific todos
+│   ├── OfflineIndicator.tsx # Offline status banner
+│   ├── PackingList.tsx    # Packing list component
+│   ├── PlaceSearch.tsx    # Location search component
+│   ├── TripMap.tsx        # Leaflet map component
+│   ├── TripTodos.tsx      # Trip-specific todos
+│   └── WeatherWidget.tsx  # Weather forecast widget
 ├── lib/                   # Utilities
 │   ├── types.ts          # TypeScript interfaces
-│   ├── storage.ts        # localStorage CRUD
+│   ├── storage.ts        # localStorage CRUD + auto-sync
+│   ├── cloud-sync.ts     # Cloud sync functions
+│   ├── db.ts             # Cloudflare D1 database helper
 │   ├── travel-data.ts    # Travel data helpers
 │   ├── pdf-export.ts     # PDF generation
 │   ├── theme-context.tsx # Theme provider & hook
+│   ├── settings-context.tsx # Settings provider
+│   ├── offline.ts        # Offline detection
 │   └── ocr.ts            # OCR (placeholder)
-├── pages/api/            # API routes
-│   ├── login.ts          # Auth endpoint
+├── pages/api/            # Legacy API routes
+│   ├── login.ts          # Legacy auth endpoint
 │   └── upload.ts         # Image upload endpoint
 ├── public/
 │   ├── logos/            # Logo & icon assets
 │   ├── uploads/          # User uploads
 │   └── manifest.json     # PWA manifest
+├── wrangler.toml         # Cloudflare Workers config
+├── open-next.config.ts   # OpenNext config for Cloudflare
 └── shared/               # Shared files for AI context
     ├── logos/
     ├── screenshots/
@@ -173,22 +212,69 @@ foldr/
 
 **Local (`.env.local`):**
 ```
-APP_USER=your_username
-APP_PASS=your_password
+APP_USER=your_username      # Legacy auth (optional)
+APP_PASS=your_password      # Legacy auth (optional)
 ```
 
-**Vercel:**
-Set in Dashboard → Settings → Environment Variables:
-- `APP_USER` (Production)
-- `APP_PASS` (Production)
+**Cloudflare (wrangler.toml):**
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "foldr-db"
+database_id = "your-database-id"
 
-⚠️ Must redeploy after changing env vars on Vercel.
+[vars]
+INVITE_CODE = "your-invite-code"
+```
+
+**Database Schema (Cloudflare D1):**
+```sql
+-- Users table
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+-- Auth tokens
+CREATE TABLE tokens (
+  token TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+
+-- Data tables (trips, blocks, todos, packing_items, expenses, settings)
+-- Each has: id, user_id, data (JSON), updated_at
+```
+
+---
+
+## Deployment
+
+**Platform:** Cloudflare Pages with D1 database
+
+**Build Command:** `npm run build`
+
+**Deploy Command:** `npx wrangler pages deploy .open-next --project-name=tripfldr`
+
+**Database Management:**
+```bash
+# Create database
+npx wrangler d1 create foldr-db
+
+# Run migrations
+npx wrangler d1 execute foldr-db --remote --file=schema.sql
+
+# Query database
+npx wrangler d1 execute foldr-db --remote --command "SELECT * FROM users"
+```
 
 ---
 
 ## Problem
 
-Travel info is scattered across emails, screenshots, texts, notes apps, calendars, and confirmation PDFs. When you need something quick—hotel address, contact number, flight time—you're digging through clutter. Foldr solves this by giving you one place, organized by trip, where everything lives and you can glance or copy what you need.
+Travel info is scattered across emails, screenshots, texts, notes apps, calendars, and confirmation PDFs. When you need something quick—hotel address, contact number, flight time—you're digging through clutter. TripFldr solves this by giving you one place, organized by trip, where everything lives and you can glance or copy what you need.
 
 ---
 
@@ -375,7 +461,7 @@ Structured blocks sorted chronologically:
 
 ## Open Questions
 
-- Domain: foldr.com not available, working title for now
+- Domain: ✅ tripfldr.com secured!
 - Authentication: Local-only for Phase 1, or simple login for future sync?
 - Data portability: JSON export for backup?
 
@@ -384,8 +470,11 @@ Structured blocks sorted chronologically:
 ## Future Ideas (Parking Lot)
 
 - Terminal maps
-- Weather at destination
-- Time zone handling/display
-- Packing lists
-- Expense tracking
-- Integration with airline/hotel apps
+- ~~Weather at destination~~ ✅ Implemented
+- ~~Time zone handling/display~~ ✅ Implemented
+- ~~Packing lists~~ ✅ Implemented
+- ~~Expense tracking~~ ✅ Implemented
+- ~~Integration with airline/hotel apps~~ (Decided against - too complex)
+- Calendar export (.ics files)
+- Trip sharing (read-only links)
+- Push notifications (PWA)

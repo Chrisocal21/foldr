@@ -113,12 +113,12 @@ function AuthFormInner() {
         <div className="text-center mb-8">
           <img 
             src="/logos/logo.png" 
-            alt="Foldr" 
+            alt="TripFldr" 
             className="h-12 w-auto mx-auto mb-4"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
-              target.insertAdjacentHTML('afterend', '<span class="text-3xl font-bold" style="color: #6B9AE8">Foldr</span>');
+              target.insertAdjacentHTML('afterend', '<span class="text-3xl font-bold" style="color: #6B9AE8">TripFldr</span>');
             }}
           />
           <p className="text-slate-400">

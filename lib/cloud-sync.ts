@@ -41,6 +41,7 @@ export async function login(email: string, password: string): Promise<AuthResult
       body: JSON.stringify({ email, password })
     })
     
+    // Don't log 401s to console - they're expected for invalid credentials
     const data = await response.json()
     
     if (data.success && data.token && data.userId) {

@@ -1,8 +1,8 @@
-# Foldr
+# TripFldr
 
 A trip-based information hub. One place to store and reference all travel info instead of digging through emails, screenshots, and notes.
 
-**Status:** ✅ Live at [foldr-chrisoc.vercel.app](https://foldr-chrisoc.vercel.app)
+**Status:** ✅ Live at [tripfldr.com](https://tripfldr.com)
 
 ## Features
 

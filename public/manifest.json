@@ -1,6 +1,6 @@
 {
-  "name": "Foldr",
-  "short_name": "Foldr",
+  "name": "TripFldr",
+  "short_name": "TripFldr",
   "description": "Your trip-based information hub",
   "start_url": "/",
   "display": "standalone",
