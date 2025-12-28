@@ -1,0 +1,23 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/api/auth/reset-password/route": "/api/auth/reset-password",
+  "/api/auth/signup/route": "/api/auth/signup",
+  "/api/sync/push/route": "/api/sync/push",
+  "/api/sync/pull/route": "/api/sync/pull",
+  "/api/auth/login/route": "/api/auth/login",
+  "/api/auth/change-password/route": "/api/auth/change-password",
+  "/build/page": "/build",
+  "/roadmap/page": "/roadmap",
+  "/stats/page": "/stats",
+  "/page": "/",
+  "/settings/page": "/settings",
+  "/search/page": "/search",
+  "/calendar/page": "/calendar",
+  "/trips/[id]/edit-block/[blockId]/page": "/trips/[id]/edit-block/[blockId]",
+  "/trips/[id]/add-block/page": "/trips/[id]/add-block",
+  "/backend/page": "/backend",
+  "/trips/[id]/duplicate/page": "/trips/[id]/duplicate",
+  "/trips/new/page": "/trips/new",
+  "/trips/[id]/page": "/trips/[id]",
+  "/trips/page": "/trips"
+}
