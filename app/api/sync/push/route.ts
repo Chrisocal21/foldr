@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDB } from '@/lib/db'
 
 // Verify token and get user ID from database
 async function getUserFromToken(request: NextRequest, db: any): Promise<string | null> {
@@ -19,7 +20,7 @@ async function getUserFromToken(request: NextRequest, db: any): Promise<string |
 
 export async function POST(request: NextRequest) {
   try {
-    const db = (process.env as any).DB
+    const db = await getDB()
     const userId = await getUserFromToken(request, db)
     if (!userId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 })

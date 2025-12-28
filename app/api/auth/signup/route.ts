@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDB, getInviteCode } from '@/lib/db'
 
 // Simple hash function for passwords (use bcrypt in production)
 async function hashPassword(password: string): Promise<string> {
@@ -33,14 +34,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Password must be at least 6 characters' }, { status: 400 })
     }
     
-    // Validate invite code - stored as environment variable
-    const validInviteCode = (process.env as any).INVITE_CODE || process.env.INVITE_CODE
+    // Validate invite code
+    const validInviteCode = await getInviteCode()
     if (!inviteCode || inviteCode !== validInviteCode) {
       return NextResponse.json({ success: false, error: 'Invalid invite code' }, { status: 403 })
     }
     
-    // Get D1 database binding from env
-    const db = (process.env as any).DB
+    // Get D1 database binding via Cloudflare context
+    const db = await getDB()
     
     if (!db) {
       // Fallback for local development - store in a simple way

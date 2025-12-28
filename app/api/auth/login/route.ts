@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getDB } from '@/lib/db'
 
 // Simple hash function for passwords
 async function hashPassword(password: string): Promise<string> {
@@ -24,8 +25,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Email and password required' }, { status: 400 })
     }
     
-    // Get D1 database binding from env
-    const db = (process.env as any).DB
+    // Get D1 database binding via Cloudflare context
+    const db = await getDB()
     
     if (!db) {
       // Fallback for local development

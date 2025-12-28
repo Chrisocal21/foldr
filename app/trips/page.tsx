@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Trip } from '@/lib/types'
 import { getTrips, getTripStatus, saveTrip, deleteTrip, getTimeAtTimezone, getTimezoneAbbr } from '@/lib/storage'
 import { useSettings } from '@/lib/settings-context'
+import FloatingMenu from '@/components/FloatingMenu'
 
 export default function TripsPage() {
   const { settings } = useSettings()
@@ -300,6 +301,9 @@ export default function TripsPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Menu for Notes, To-Do, Build, Roadmap */}
+      <FloatingMenu />
     </div>
   )
 }
