@@ -1,8 +1,32 @@
 import { Trip, Block, TripStatus, Todo, PackingItem, PackingCategory, PackingTemplate, Expense, ExpenseCategory } from './types'
+import { syncToCloud, isLoggedIn } from './cloud-sync'
 
 const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
 const TODOS_KEY = 'foldr_todos'
+
+// Debounced sync to avoid too many API calls
+let syncTimeout: ReturnType<typeof setTimeout> | null = null
+function triggerSync() {
+  // Only run on client side
+  if (typeof window === 'undefined') return
+  if (!isLoggedIn()) {
+    console.log('[Sync] Not logged in, skipping sync')
+    return
+  }
+  
+  // Debounce: wait 2 seconds after last change before syncing
+  if (syncTimeout) clearTimeout(syncTimeout)
+  syncTimeout = setTimeout(async () => {
+    console.log('[Sync] Starting cloud sync...')
+    const result = await syncToCloud()
+    if (result.success) {
+      console.log('[Sync] Cloud sync successful!')
+    } else {
+      console.log('[Sync] Cloud sync failed:', result.error)
+    }
+  }, 2000)
+}
 
 // Helper to parse date string as local date (avoids UTC timezone shift)
 function parseLocalDate(dateStr: string): Date {
@@ -252,6 +276,7 @@ export function saveTrip(trip: Trip): void {
   }
   
   localStorage.setItem(TRIPS_KEY, JSON.stringify(trips))
+  triggerSync()
 }
 
 export function deleteTrip(tripId: string): void {
@@ -261,6 +286,7 @@ export function deleteTrip(tripId: string): void {
   // Also delete all blocks for this trip
   const blocks = getBlocks().filter(b => b.tripId !== tripId)
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+  triggerSync()
 }
 
 export function getTripById(tripId: string): Trip | undefined {
@@ -308,11 +334,13 @@ export function saveBlock(block: Block): void {
   }
   
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+  triggerSync()
 }
 
 export function deleteBlock(blockId: string): void {
   const blocks = getBlocks().filter(b => b.id !== blockId)
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+  triggerSync()
 }
 
 export function duplicateBlock(blockId: string, targetTripId?: string): Block | undefined {
@@ -364,6 +392,7 @@ export function reorderBlocks(tripId: string, blockId: string, direction: 'up' |
   
   // Save all blocks
   localStorage.setItem(BLOCKS_KEY, JSON.stringify([...otherBlocks, ...tripBlocks]))
+  triggerSync()
 }
 
 // Todos
@@ -384,11 +413,13 @@ export function saveTodo(todo: Todo): void {
   }
   
   localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+  triggerSync()
 }
 
 export function deleteTodo(todoId: string): void {
   const todos = getTodos().filter(t => t.id !== todoId)
   localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+  triggerSync()
 }
 
 export function toggleTodo(todoId: string): void {
@@ -398,6 +429,7 @@ export function toggleTodo(todoId: string): void {
     todos[index].completed = !todos[index].completed
     todos[index].updatedAt = new Date().toISOString()
     localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+    triggerSync()
   }
 }
 
@@ -418,7 +450,7 @@ export function searchAll(query: string): { trips: Trip[], blocks: Block[] } {
 }
 
 // Packing List
-const PACKING_KEY = 'foldr_packing'
+const PACKING_KEY = 'foldr_packing_items'
 
 export function getPackingItems(tripId: string): PackingItem[] {
   if (typeof window === 'undefined') return []
@@ -439,12 +471,14 @@ export function savePackingItem(item: PackingItem): void {
   }
   
   localStorage.setItem(PACKING_KEY, JSON.stringify(items))
+  triggerSync()
 }
 
 export function deletePackingItem(itemId: string): void {
   const data = localStorage.getItem(PACKING_KEY)
   const items: PackingItem[] = data ? JSON.parse(data) : []
   localStorage.setItem(PACKING_KEY, JSON.stringify(items.filter(i => i.id !== itemId)))
+  triggerSync()
 }
 
 export function togglePackingItem(itemId: string): void {
@@ -454,6 +488,7 @@ export function togglePackingItem(itemId: string): void {
   if (index >= 0) {
     items[index].packed = !items[index].packed
     localStorage.setItem(PACKING_KEY, JSON.stringify(items))
+    triggerSync()
   }
 }
 
@@ -575,12 +610,14 @@ export function saveExpense(expense: Expense): void {
   }
   
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses))
+  triggerSync()
 }
 
 export function deleteExpense(expenseId: string): void {
   const data = localStorage.getItem(EXPENSES_KEY)
   const expenses: Expense[] = data ? JSON.parse(data) : []
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses.filter(e => e.id !== expenseId)))
+  triggerSync()
 }
 
 export function getExpenseTotal(tripId: string, currency?: string): number {
