@@ -6,20 +6,24 @@ import FloatingMenu from '@/components/FloatingMenu';
 export default function BuildPage() {
   const currentFeatures = [
     {
-      category: 'Authentication',
+      category: 'Authentication & Accounts',
       items: [
-        'Login page with secure credentials (server-side env vars)',
-        'Session persistence via localStorage',
+        'User signup with invite codes',
+        'Login with email/password',
+        'Password reset functionality',
+        'Session persistence via tokens',
         'Eye toggle to show/hide password',
+        'Continue without account option',
       ],
     },
     {
-      category: 'Main Dashboard',
+      category: 'Cloud Sync',
       items: [
-        'Real-time clock and date display',
-        'GPS location with reverse geocoding',
-        '"Foldr" branding',
-        'Quick access to trips via + icon',
+        'Multi-device sync via Cloudflare D1',
+        'Real-time push/pull synchronization',
+        'Immediate delete propagation across devices',
+        'Offline-first with cloud backup',
+        'User data isolation',
       ],
     },
     {
@@ -29,6 +33,9 @@ export default function BuildPage() {
         'Inline editing of trip name and dates',
         'Trip status indicators: Upcoming / Active / Past',
         'Duplicate trip functionality',
+        'Trip color coding',
+        'Destination search with auto-complete',
+        'Auto timezone detection',
         'Today&apos;s trips display',
         'Upcoming trips with clickable cards',
       ],
@@ -46,13 +53,58 @@ export default function BuildPage() {
     {
       category: 'Block Types',
       items: [
-        'Flight blocks',
+        'Flight blocks with full details',
         'Hotel blocks',
         'Layover blocks',
-        'Transport blocks',
+        'Transport blocks (Rental, Uber, Train, etc)',
         'Work/Job blocks',
-        'Screenshot blocks',
+        'Screenshot blocks with image upload',
         'Note blocks',
+        'Activity blocks',
+        'Restaurant blocks',
+        'Cruise blocks',
+      ],
+    },
+    {
+      category: 'Packing Lists',
+      items: [
+        'Per-trip packing lists',
+        'Category organization',
+        'Check/uncheck items',
+        'Pre-built templates (Beach, Business, etc)',
+        'Custom items',
+      ],
+    },
+    {
+      category: 'Expense Tracking',
+      items: [
+        'Log expenses per trip',
+        'Category breakdown',
+        'Running totals',
+        'Multi-currency support',
+      ],
+    },
+    {
+      category: 'Weather & Location',
+      items: [
+        'Weather widget on trip page',
+        '5-day forecast at destination',
+        'Current temperature display',
+        'Maps integration with pins',
+        'Timezone display with local time',
+      ],
+    },
+    {
+      category: 'Settings & UI',
+      items: [
+        'Dark mode (default)',
+        'Temperature unit toggle (°C/°F)',
+        'Distance unit toggle (km/mi)',
+        'Date format options',
+        'Time format (12h/24h)',
+        'Offline indicator',
+        'Manual sync button',
+        'Logout functionality',
       ],
     },
     {
@@ -64,6 +116,7 @@ export default function BuildPage() {
         'Mobile-first responsive design',
         'Offline-capable (localStorage)',
         'PWA manifest',
+        'Copy-to-clipboard for confirmation codes',
       ],
     },
   ];
@@ -75,21 +128,21 @@ export default function BuildPage() {
       title: 'Landing Page & Setup',
       items: [
         'GitHub repo setup',
-        'Vercel deployment',
+        'Cloudflare deployment',
         'React/Next.js project structure',
         'Mobile-responsive base',
       ],
     },
     {
       phase: 'Phase 1',
-      status: 'in-progress',
+      status: 'complete',
       title: 'Core Trip Features',
       items: [
         'Trip list & management',
         'Calendar view',
         'Trip status indicators',
         'Duplicate trip',
-        'Block types (all 7)',
+        'Block types (10 total)',
         'Tap-to-copy fields',
         'Global search',
         'Today view',
@@ -97,22 +150,38 @@ export default function BuildPage() {
     },
     {
       phase: 'Phase 2',
-      status: 'planned',
+      status: 'complete',
       title: 'Advanced Features',
       items: [
-        'OCR for screenshots',
-        'One-sheet PDF export',
-        'Email forwarding/parsing',
+        'Weather widget',
+        'Packing lists with templates',
+        'Expense tracking',
+        'PDF export',
+        'Maps integration',
       ],
     },
     {
       phase: 'Phase 3',
-      status: 'planned',
-      title: 'Sync & Notifications',
+      status: 'complete',
+      title: 'Sync & Accounts',
       items: [
-        'Notifications/reminders',
+        'User signup/login',
         'Multi-device sync',
-        'Cloud backup',
+        'Cloud backup (Cloudflare D1)',
+        'Immediate delete sync',
+        'Offline-first architecture',
+      ],
+    },
+    {
+      phase: 'Phase 4',
+      status: 'planned',
+      title: 'Future Enhancements',
+      items: [
+        'Push notifications',
+        'Trip sharing',
+        'AI trip planner',
+        'Flight status API',
+        'Native mobile app',
       ],
     },
   ];
@@ -121,9 +190,9 @@ export default function BuildPage() {
     { name: 'Next.js 15', desc: 'App Router' },
     { name: 'TypeScript', desc: 'Type safety' },
     { name: 'Tailwind CSS', desc: 'Styling' },
+    { name: 'Cloudflare D1', desc: 'Cloud database' },
+    { name: 'Cloudflare Workers', desc: 'Edge deployment' },
     { name: 'localStorage', desc: 'Offline storage' },
-    { name: 'Vercel', desc: 'Deployment' },
-    { name: 'GitHub', desc: 'Version control' },
   ];
 
   const getStatusBadge = (status: string) => {

@@ -3,8 +3,8 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trip, Block } from '@/lib/types'
-import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, TIMEZONES, getTimeAtTimezone, getTimezoneAbbr } from '@/lib/storage'
+import { Trip, Block, Todo } from '@/lib/types'
+import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, TIMEZONES, getTimeAtTimezone, getTimezoneAbbr, getTodos, toggleTodo, deleteTodo, saveTodo } from '@/lib/storage'
 import { BlockCard } from '@/components/BlockCard'
 import { exportTripToPDF } from '@/lib/pdf-export'
 import FloatingMenu from '@/components/FloatingMenu'
@@ -18,7 +18,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const { settings } = useSettings()
   const [trip, setTrip] = useState<Trip | null>(null)
   const [blocks, setBlocks] = useState<Block[]>([])
+  const [tripTodos, setTripTodos] = useState<Todo[]>([])
+  const [newTodoText, setNewTodoText] = useState('')
   const [showMenu, setShowMenu] = useState(false)
+  const [showTasksMenu, setShowTasksMenu] = useState(false)
+  const [tasksCollapsed, setTasksCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('tasks-collapsed') === 'true'
+    }
+    return false
+  })
   const [editingTitle, setEditingTitle] = useState(false)
   const [editingDates, setEditingDates] = useState(false)
   const [editingColor, setEditingColor] = useState(false)
@@ -27,6 +36,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [startDateValue, setStartDateValue] = useState('')
   const [endDateValue, setEndDateValue] = useState('')
   const [currentTemp, setCurrentTemp] = useState<{ temp: number; icon: string } | null>(null)
+
+  const handleToggleTasksCollapse = (collapsed: boolean) => {
+    setTasksCollapsed(collapsed)
+    if (typeof window !== 'undefined') {
+      if (collapsed) {
+        localStorage.setItem('tasks-collapsed', 'true')
+      } else {
+        localStorage.removeItem('tasks-collapsed')
+      }
+    }
+  }
 
   const colors = [
     { name: 'Blue', value: '#3b82f6' },
@@ -105,6 +125,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     setStartDateValue(tripData.startDate)
     setEndDateValue(tripData.endDate)
     setBlocks(getBlocksByTripId(id))
+    setTripTodos(getTodos().filter(t => t.tripIds.includes(id)))
   }
 
   const handleSaveTitle = () => {
@@ -150,6 +171,33 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   const handleDeleteBlock = (blockId: string) => {
     deleteBlock(blockId)
+    loadTripData()
+  }
+
+  // Todo handlers
+  const handleToggleTodo = (todoId: string) => {
+    toggleTodo(todoId)
+    loadTripData()
+  }
+
+  const handleDeleteTodo = (todoId: string) => {
+    deleteTodo(todoId)
+    loadTripData()
+  }
+
+  const handleAddTodo = () => {
+    if (!newTodoText.trim()) return
+    const now = new Date().toISOString()
+    const todo: Todo = {
+      id: crypto.randomUUID(),
+      text: newTodoText.trim(),
+      completed: false,
+      tripIds: [id],
+      createdAt: now,
+      updatedAt: now,
+    }
+    saveTodo(todo)
+    setNewTodoText('')
     loadTripData()
   }
 
@@ -466,10 +514,196 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {/* Add Block Button */}
         <Link
           href={`/trips/${id}/add-block`}
-          className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-lg font-medium mb-8 transition-colors"
+          className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-lg font-medium mb-4 transition-colors"
         >
           + Add Block
         </Link>
+
+        {/* Trip Tasks - Block Card Style */}
+        <div className="relative group mb-4">
+          {tasksCollapsed ? (
+            /* Collapsed View */
+            <div 
+              onClick={() => handleToggleTasksCollapse(false)}
+              className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
+            >
+              <div className="bg-green-600/20 p-1.5 rounded-lg">
+                <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M9 12l2 2 4-4" />
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="text-white font-medium">Tasks</span>
+                <span className="text-slate-500 mx-2">·</span>
+                <span className="text-slate-400 text-sm">
+                  {tripTodos.filter(t => !t.completed).length} pending
+                  {tripTodos.filter(t => t.completed).length > 0 && `, ${tripTodos.filter(t => t.completed).length} done`}
+                </span>
+              </div>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowTasksMenu(!showTasksMenu)
+                }}
+                className="text-slate-500 hover:text-slate-300 p-1 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="6" r="1" fill="currentColor" />
+                  <circle cx="12" cy="12" r="1" fill="currentColor" />
+                  <circle cx="12" cy="18" r="1" fill="currentColor" />
+                </svg>
+              </button>
+              
+              {showTasksMenu && (
+                <div className="absolute right-2 top-12 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden min-w-[120px] z-20">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleToggleTasksCollapse(false)
+                      setShowTasksMenu(false)
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                  >
+                    Expand
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Expanded View */
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+                <div className="flex items-center gap-3">
+                  <div className="bg-green-600/20 p-1.5 rounded-lg">
+                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M9 12l2 2 4-4" />
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                    </svg>
+                  </div>
+                  <span className="text-white font-medium">Tasks</span>
+                  {tripTodos.filter(t => !t.completed).length > 0 && (
+                    <span className="text-xs bg-green-600/20 text-green-400 px-2 py-0.5 rounded-full">
+                      {tripTodos.filter(t => !t.completed).length}
+                    </span>
+                  )}
+                </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowTasksMenu(!showTasksMenu)}
+                    className="text-slate-500 hover:text-slate-300 p-1 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="6" r="1" fill="currentColor" />
+                      <circle cx="12" cy="12" r="1" fill="currentColor" />
+                      <circle cx="12" cy="18" r="1" fill="currentColor" />
+                    </svg>
+                  </button>
+                  
+                  {showTasksMenu && (
+                    <div className="absolute right-0 top-8 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden min-w-[120px] z-20">
+                      <button
+                        onClick={() => {
+                          handleToggleTasksCollapse(true)
+                          setShowTasksMenu(false)
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-slate-300 hover:bg-slate-700 transition-colors"
+                      >
+                        Minimize
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Content */}
+              <div className="p-4">
+                {/* Add Todo Input */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={newTodoText}
+                    onChange={(e) => setNewTodoText(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
+                    placeholder="Add a task..."
+                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-green-500"
+                  />
+                  <button
+                    onClick={handleAddTodo}
+                    disabled={!newTodoText.trim()}
+                    className="bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M12 5v14m-7-7h14" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Todo List */}
+                {tripTodos.length === 0 ? (
+                  <div className="text-center py-6 text-slate-500">
+                    <p className="text-sm">No tasks yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Incomplete todos */}
+                    {tripTodos.filter(t => !t.completed).map(todo => (
+                      <div key={todo.id} className="flex items-center gap-2 bg-slate-900 rounded-lg px-3 py-2 border border-slate-700 group">
+                        <button 
+                          onClick={() => handleToggleTodo(todo.id)} 
+                          className="text-slate-400 hover:text-green-400 transition-colors shrink-0"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" />
+                          </svg>
+                        </button>
+                        <span className="flex-1 text-white text-sm">{todo.text}</span>
+                        <button 
+                          onClick={() => handleDeleteTodo(todo.id)} 
+                          className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                    
+                    {/* Completed todos */}
+                    {tripTodos.filter(t => t.completed).length > 0 && (
+                      <>
+                        <div className="text-xs text-slate-500 uppercase tracking-wide pt-2 pb-1">Completed</div>
+                        {tripTodos.filter(t => t.completed).map(todo => (
+                          <div key={todo.id} className="flex items-center gap-2 bg-slate-900/50 rounded-lg px-3 py-2 border border-slate-700/50 group">
+                            <button 
+                              onClick={() => handleToggleTodo(todo.id)} 
+                              className="text-green-500 shrink-0"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M9 12l2 2 4-4" />
+                                <circle cx="12" cy="12" r="10" />
+                              </svg>
+                            </button>
+                            <span className="flex-1 text-slate-500 text-sm line-through">{todo.text}</span>
+                            <button 
+                              onClick={() => handleDeleteTodo(todo.id)} 
+                              className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                <path d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Timeline */}
         {blocks.length === 0 ? (
