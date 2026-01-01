@@ -4,6 +4,38 @@ import { syncToCloud, isLoggedIn } from './cloud-sync'
 const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
 const TODOS_KEY = 'foldr_todos'
+const DELETED_ITEMS_KEY = 'foldr_deleted_items'
+
+// Track deleted item IDs for sync
+interface DeletedItems {
+  trips: string[]
+  blocks: string[]
+  todos: string[]
+  packingItems: string[]
+  expenses: string[]
+}
+
+function getDeletedItems(): DeletedItems {
+  if (typeof window === 'undefined') return { trips: [], blocks: [], todos: [], packingItems: [], expenses: [] }
+  const data = localStorage.getItem(DELETED_ITEMS_KEY)
+  return data ? JSON.parse(data) : { trips: [], blocks: [], todos: [], packingItems: [], expenses: [] }
+}
+
+function addDeletedItem(type: keyof DeletedItems, id: string): void {
+  const deleted = getDeletedItems()
+  if (!deleted[type].includes(id)) {
+    deleted[type].push(id)
+    localStorage.setItem(DELETED_ITEMS_KEY, JSON.stringify(deleted))
+  }
+}
+
+export function clearDeletedItems(): void {
+  localStorage.removeItem(DELETED_ITEMS_KEY)
+}
+
+export function getDeletedItemsForSync(): DeletedItems {
+  return getDeletedItems()
+}
 
 // Debounced sync to avoid too many API calls
 let syncTimeout: ReturnType<typeof setTimeout> | null = null
@@ -199,24 +231,14 @@ function getTimezoneFromCoords(lat: number, lon: number): string {
   return 'UTC'
 }
 
-// Search for places using OpenStreetMap Nominatim (free, no API key)
+// Search for places using our proxy API (to avoid CORS issues with Nominatim)
 export async function searchPlaces(query: string): Promise<PlaceResult[]> {
   if (!query || query.length < 2) return []
   
   try {
+    // Use our proxy API to avoid CORS issues
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?` +
-      `q=${encodeURIComponent(query)}&` +
-      `format=json&` +
-      `addressdetails=1&` +
-      `limit=5&` +
-      `featuretype=city`,
-      {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Foldr-Travel-App/1.0'
-        }
-      }
+      `/api/places/search?q=${encodeURIComponent(query)}`
     )
     
     if (!response.ok) return []
@@ -289,6 +311,13 @@ export function saveTrip(trip: Trip): void {
 }
 
 export function deleteTrip(tripId: string): void {
+  // Track the deleted trip ID
+  addDeletedItem('trips', tripId)
+  
+  // Track all blocks that belong to this trip
+  const blocksToDelete = getBlocks().filter(b => b.tripId === tripId)
+  blocksToDelete.forEach(b => addDeletedItem('blocks', b.id))
+  
   const trips = getTrips().filter(t => t.id !== tripId)
   localStorage.setItem(TRIPS_KEY, JSON.stringify(trips))
   
@@ -347,6 +376,7 @@ export function saveBlock(block: Block): void {
 }
 
 export function deleteBlock(blockId: string): void {
+  addDeletedItem('blocks', blockId)
   const blocks = getBlocks().filter(b => b.id !== blockId)
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
   triggerSync()
@@ -426,6 +456,7 @@ export function saveTodo(todo: Todo): void {
 }
 
 export function deleteTodo(todoId: string): void {
+  addDeletedItem('todos', todoId)
   const todos = getTodos().filter(t => t.id !== todoId)
   localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
   triggerSync()
@@ -484,6 +515,7 @@ export function savePackingItem(item: PackingItem): void {
 }
 
 export function deletePackingItem(itemId: string): void {
+  addDeletedItem('packingItems', itemId)
   const data = localStorage.getItem(PACKING_KEY)
   const items: PackingItem[] = data ? JSON.parse(data) : []
   localStorage.setItem(PACKING_KEY, JSON.stringify(items.filter(i => i.id !== itemId)))
@@ -623,6 +655,7 @@ export function saveExpense(expense: Expense): void {
 }
 
 export function deleteExpense(expenseId: string): void {
+  addDeletedItem('expenses', expenseId)
   const data = localStorage.getItem(EXPENSES_KEY)
   const expenses: Expense[] = data ? JSON.parse(data) : []
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses.filter(e => e.id !== expenseId)))

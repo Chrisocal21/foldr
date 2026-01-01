@@ -94,6 +94,10 @@ export async function syncToCloud(): Promise<SyncResult> {
   if (!token) return { success: false, error: 'Not logged in' }
   
   try {
+    // Get deleted items from storage module
+    const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
+    const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : null
+    
     const localData = {
       trips: localStorage.getItem('foldr_trips'),
       blocks: localStorage.getItem('foldr_blocks'),
@@ -101,6 +105,7 @@ export async function syncToCloud(): Promise<SyncResult> {
       packingItems: localStorage.getItem('foldr_packing_items'),
       expenses: localStorage.getItem('foldr_expenses'),
       settings: localStorage.getItem('foldr_settings'),
+      deletedItems: deletedItems, // Include deleted item IDs
     }
     
     const response = await fetch(`${API_BASE}/sync/push`, {
@@ -116,6 +121,8 @@ export async function syncToCloud(): Promise<SyncResult> {
     
     if (data.success) {
       localStorage.setItem('foldr_last_sync', new Date().toISOString())
+      // Clear deleted items after successful sync
+      localStorage.removeItem('foldr_deleted_items')
       return { success: true }
     }
     
@@ -125,7 +132,51 @@ export async function syncToCloud(): Promise<SyncResult> {
   }
 }
 
-// Pull data from cloud to local
+// Helper to merge arrays by ID, using updatedAt timestamp to resolve conflicts
+// Also excludes any IDs that are in the deletedIds set
+function mergeArraysById<T extends { id: string; updatedAt?: string }>(
+  local: T[],
+  cloud: T[],
+  deletedIds: Set<string> = new Set()
+): T[] {
+  const merged = new Map<string, T>()
+  
+  // Add all local items first (excluding deleted ones)
+  for (const item of local) {
+    if (!deletedIds.has(item.id)) {
+      merged.set(item.id, item)
+    }
+  }
+  
+  // Merge cloud items - cloud wins if it has a newer updatedAt, or if local doesn't have the item
+  // But skip items that were explicitly deleted locally
+  for (const cloudItem of cloud) {
+    if (deletedIds.has(cloudItem.id)) {
+      // Item was deleted locally, don't add it back
+      continue
+    }
+    
+    const localItem = merged.get(cloudItem.id)
+    
+    if (!localItem) {
+      // Item only exists in cloud - add it
+      merged.set(cloudItem.id, cloudItem)
+    } else {
+      // Item exists in both - use the one with newer updatedAt
+      const localUpdated = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0
+      const cloudUpdated = cloudItem.updatedAt ? new Date(cloudItem.updatedAt).getTime() : 0
+      
+      if (cloudUpdated > localUpdated) {
+        merged.set(cloudItem.id, cloudItem)
+      }
+      // Otherwise keep the local item (already in merged)
+    }
+  }
+  
+  return Array.from(merged.values())
+}
+
+// Pull data from cloud and MERGE with local (not overwrite)
 export async function syncFromCloud(): Promise<SyncResult> {
   const token = getAuthToken()
   if (!token) return { success: false, error: 'Not logged in' }
@@ -141,15 +192,47 @@ export async function syncFromCloud(): Promise<SyncResult> {
     const data = await response.json()
     
     if (data.success) {
-      // Merge cloud data with local (cloud wins for conflicts)
-      if (data.trips) localStorage.setItem('foldr_trips', data.trips)
-      if (data.blocks) localStorage.setItem('foldr_blocks', data.blocks)
-      if (data.todos) localStorage.setItem('foldr_todos', data.todos)
-      if (data.packingItems) localStorage.setItem('foldr_packing_items', data.packingItems)
-      if (data.expenses) localStorage.setItem('foldr_expenses', data.expenses)
+      // Get locally deleted items to exclude from merge
+      const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
+      const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : { trips: [], blocks: [], todos: [], packingItems: [], expenses: [] }
+      
+      // MERGE cloud data with local (not overwrite!)
+      // Get local data
+      const localTrips = JSON.parse(localStorage.getItem('foldr_trips') || '[]')
+      const localBlocks = JSON.parse(localStorage.getItem('foldr_blocks') || '[]')
+      const localTodos = JSON.parse(localStorage.getItem('foldr_todos') || '[]')
+      const localPackingItems = JSON.parse(localStorage.getItem('foldr_packing_items') || '[]')
+      const localExpenses = JSON.parse(localStorage.getItem('foldr_expenses') || '[]')
+      
+      // Get cloud data
+      const cloudTrips = data.trips ? JSON.parse(data.trips) : []
+      const cloudBlocks = data.blocks ? JSON.parse(data.blocks) : []
+      const cloudTodos = data.todos ? JSON.parse(data.todos) : []
+      const cloudPackingItems = data.packingItems ? JSON.parse(data.packingItems) : []
+      const cloudExpenses = data.expenses ? JSON.parse(data.expenses) : []
+      
+      // Merge and save (excluding locally deleted items)
+      const mergedTrips = mergeArraysById(localTrips, cloudTrips, new Set(deletedItems.trips))
+      const mergedBlocks = mergeArraysById(localBlocks, cloudBlocks, new Set(deletedItems.blocks))
+      const mergedTodos = mergeArraysById(localTodos, cloudTodos, new Set(deletedItems.todos))
+      const mergedPackingItems = mergeArraysById(localPackingItems, cloudPackingItems, new Set(deletedItems.packingItems))
+      const mergedExpenses = mergeArraysById(localExpenses, cloudExpenses, new Set(deletedItems.expenses))
+      
+      localStorage.setItem('foldr_trips', JSON.stringify(mergedTrips))
+      localStorage.setItem('foldr_blocks', JSON.stringify(mergedBlocks))
+      localStorage.setItem('foldr_todos', JSON.stringify(mergedTodos))
+      localStorage.setItem('foldr_packing_items', JSON.stringify(mergedPackingItems))
+      localStorage.setItem('foldr_expenses', JSON.stringify(mergedExpenses))
+      
+      // Settings: cloud wins for settings (single object, not array)
       if (data.settings) localStorage.setItem('foldr_settings', data.settings)
       
       localStorage.setItem('foldr_last_sync', new Date().toISOString())
+      console.log('[Sync] Merged cloud data with local:', {
+        trips: mergedTrips.length,
+        blocks: mergedBlocks.length,
+        todos: mergedTodos.length
+      })
       return { success: true }
     }
     
