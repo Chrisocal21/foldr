@@ -797,14 +797,14 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
   const handleAdd = () => {
     if (!newTodo.trim()) return;
     const now = new Date().toISOString();
-    const todo = {
+    const todo: Todo = {
       id: crypto.randomUUID(),
       text: newTodo.trim(),
       completed: false,
-      status: 'todo',
+      status: 'todo' as TodoStatus,
       tripIds: [tripId],
       dueDate: dueDate || undefined,
-      priority: priority || undefined,
+      priority: priority as TodoPriority || undefined,
       createdAt: now,
       updatedAt: now,
     };
