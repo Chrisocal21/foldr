@@ -6,6 +6,7 @@ import { Trip } from '@/lib/types'
 import { getTrips, getTripStatus, saveTrip, deleteTrip, getTimeAtTimezone, getTimezoneAbbr } from '@/lib/storage'
 import { useSettings } from '@/lib/settings-context'
 import FloatingMenu from '@/components/FloatingMenu'
+import { setupAutoSync, isLoggedIn, fullSync } from '@/lib/cloud-sync'
 
 export default function TripsPage() {
   const { settings } = useSettings()
@@ -19,6 +20,15 @@ export default function TripsPage() {
     // Load hidePast preference
     const saved = localStorage.getItem('foldr_hide_past')
     if (saved) setHidePast(saved === 'true')
+    
+    // Setup auto-sync if logged in
+    if (isLoggedIn()) {
+      setupAutoSync()
+      // Do an initial sync when page loads
+      fullSync().then(() => {
+        loadTrips() // Reload trips after sync
+      })
+    }
   }, [])
 
   const loadTrips = () => {
