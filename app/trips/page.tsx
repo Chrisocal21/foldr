@@ -49,10 +49,10 @@ export default function TripsPage() {
     }
   }
 
-  const handleDeleteTrip = () => {
+  const handleDeleteTrip = async () => {
     if (deleteModal.trip) {
-      deleteTrip(deleteModal.trip.id)
       setDeleteModal({ show: false, trip: null })
+      await deleteTrip(deleteModal.trip.id)
       loadTrips()
     }
   }

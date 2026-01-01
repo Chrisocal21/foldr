@@ -88,6 +88,70 @@ export function logout() {
   localStorage.removeItem('foldr_user_email')
 }
 
+// IMMEDIATE delete - no debouncing, directly hits the cloud
+// Call this when user deletes something - it must sync immediately
+export async function immediateDelete(deletions: {
+  trips?: string[]
+  blocks?: string[]
+  todos?: string[]
+  packingItems?: string[]
+  expenses?: string[]
+}): Promise<SyncResult> {
+  const token = getAuthToken()
+  if (!token) {
+    console.log('[Sync] Not logged in, skipping immediate delete')
+    return { success: false, error: 'Not logged in' }
+  }
+  
+  try {
+    console.log('[Sync] IMMEDIATE DELETE:', JSON.stringify(deletions))
+    
+    const response = await fetch(`${API_BASE}/sync/delete`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(deletions)
+    })
+    
+    console.log('[Sync] Delete response status:', response.status)
+    
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.log('[Sync] Delete failed with status', response.status, ':', errorText)
+      return { success: false, error: `Server error: ${response.status}` }
+    }
+    
+    const data = await response.json()
+    console.log('[Sync] Delete response data:', JSON.stringify(data))
+    
+    if (data.success) {
+      console.log('[Sync] ✅ Immediate delete successful')
+      // Clear any queued deletions for these IDs
+      const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
+      if (deletedItemsStr) {
+        const deletedItems = JSON.parse(deletedItemsStr)
+        // Remove the IDs we just deleted from the pending list
+        if (deletions.trips) {
+          deletedItems.trips = (deletedItems.trips || []).filter((id: string) => !deletions.trips!.includes(id))
+        }
+        if (deletions.blocks) {
+          deletedItems.blocks = (deletedItems.blocks || []).filter((id: string) => !deletions.blocks!.includes(id))
+        }
+        localStorage.setItem('foldr_deleted_items', JSON.stringify(deletedItems))
+      }
+      return { success: true }
+    }
+    
+    console.log('[Sync] ❌ Immediate delete failed:', data.error)
+    return { success: false, error: data.error || 'Delete failed' }
+  } catch (error) {
+    console.log('[Sync] ❌ Immediate delete network error:', error)
+    return { success: false, error: 'Network error' }
+  }
+}
+
 // Sync log management
 const SYNC_LOG_KEY = 'foldr_sync_log'
 const MAX_SYNC_LOG_ENTRIES = 10
@@ -329,6 +393,15 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
   const token = getAuthToken()
   if (!token) return { success: false, error: 'Not logged in' }
   
+  // Cancel any pending pushes - we're about to replace local with cloud data
+  // This prevents stale data from being pushed after the pull
+  try {
+    const { cancelPendingSync } = await import('./storage')
+    cancelPendingSync()
+  } catch (e) {
+    // Ignore - storage module might not be loaded
+  }
+  
   try {
     console.log('[Sync] Pulling from cloud - CLOUD IS SOURCE OF TRUTH')
     const response = await fetch(`${API_BASE}/sync/pull`, {
@@ -428,33 +501,16 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
   }
 }
 
-// Full sync: PULL cloud first (source of truth), then push ONLY pending deletions
+// Full sync: Just PULL from cloud
+// Cloud is the single source of truth
+// Deletions are handled immediately via immediateDelete()
+// Adds/edits are pushed via triggerSync() debounce
 export async function fullSync(): Promise<SyncResult> {
-  console.log('[Sync] Starting full sync...')
+  console.log('[Sync] Starting full sync - pulling from cloud...')
   
-  // Check if we have pending deletions that need to be pushed
-  const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
-  const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : null
-  const hasPendingDeletions = deletedItems && (
-    (deletedItems.trips?.length || 0) +
-    (deletedItems.blocks?.length || 0) +
-    (deletedItems.todos?.length || 0) +
-    (deletedItems.packingItems?.length || 0) +
-    (deletedItems.expenses?.length || 0)
-  ) > 0
-  
-  // If we have pending deletions, push them FIRST before pulling
-  // Use deletions-only push to avoid re-adding stale data
-  if (hasPendingDeletions) {
-    console.log('[Sync] Pushing pending deletions first...')
-    const pushResult = await pushDeletionsOnly()
-    if (!pushResult.success) {
-      console.log('[Sync] Push deletions failed:', pushResult.error)
-    }
-  }
-  
-  // PULL cloud data - this REPLACES local completely
-  // Cloud is the single source of truth
+  // Just pull from cloud - cloud is source of truth
+  // Any pending deletions should have been sent via immediateDelete()
+  // Any pending edits will be pushed via the next triggerSync()
   const pullResult = await syncFromCloud()
   
   console.log('[Sync] Full sync complete')

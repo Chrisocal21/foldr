@@ -1,5 +1,5 @@
 import { Trip, Block, TripStatus, Todo, PackingItem, PackingCategory, PackingTemplate, Expense, ExpenseCategory } from './types'
-import { syncToCloud, isLoggedIn } from './cloud-sync'
+import { syncToCloud, isLoggedIn, immediateDelete } from './cloud-sync'
 
 const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
@@ -39,6 +39,17 @@ export function getDeletedItemsForSync(): DeletedItems {
 
 // Debounced sync to avoid too many API calls
 let syncTimeout: ReturnType<typeof setTimeout> | null = null
+
+// Cancel any pending sync - called when pulling from cloud
+// This prevents stale local data from being pushed after a pull
+export function cancelPendingSync() {
+  if (syncTimeout) {
+    console.log('[Sync] Cancelling pending sync')
+    clearTimeout(syncTimeout)
+    syncTimeout = null
+  }
+}
+
 function triggerSync() {
   console.log('[Sync] triggerSync called')
   // Only run on client side
@@ -310,21 +321,41 @@ export function saveTrip(trip: Trip): void {
   triggerSync()
 }
 
-export function deleteTrip(tripId: string): void {
-  // Track the deleted trip ID
-  addDeletedItem('trips', tripId)
+export async function deleteTrip(tripId: string): Promise<void> {
+  console.log('[Storage] ========== DELETE TRIP START ==========')
+  console.log('[Storage] Deleting trip:', tripId)
   
-  // Track all blocks that belong to this trip
+  // Get all blocks that belong to this trip (for immediate delete)
   const blocksToDelete = getBlocks().filter(b => b.tripId === tripId)
-  blocksToDelete.forEach(b => addDeletedItem('blocks', b.id))
+  const blockIds = blocksToDelete.map(b => b.id)
+  console.log('[Storage] Associated blocks to delete:', blockIds.length)
   
+  // Remove from localStorage immediately
   const trips = getTrips().filter(t => t.id !== tripId)
   localStorage.setItem(TRIPS_KEY, JSON.stringify(trips))
+  console.log('[Storage] Removed from localStorage, remaining trips:', trips.length)
   
-  // Also delete all blocks for this trip
   const blocks = getBlocks().filter(b => b.tripId !== tripId)
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
-  triggerSync()
+  
+  // IMMEDIATELY delete from cloud - no debouncing
+  // This ensures the deletion reaches the server right away
+  // AWAIT the result so we know it completed
+  console.log('[Storage] Calling immediateDelete...')
+  const result = await immediateDelete({
+    trips: [tripId],
+    blocks: blockIds
+  })
+  
+  if (result.success) {
+    console.log('[Storage] ✅ Trip deleted from cloud immediately')
+  } else {
+    // If cloud delete failed, track for later sync
+    console.log('[Storage] ❌ Cloud delete failed:', result.error)
+    addDeletedItem('trips', tripId)
+    blockIds.forEach(id => addDeletedItem('blocks', id))
+  }
+  console.log('[Storage] ========== DELETE TRIP END ==========')
 }
 
 export function getTripById(tripId: string): Trip | undefined {

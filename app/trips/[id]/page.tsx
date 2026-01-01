@@ -136,8 +136,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   const [showDeleteTripModal, setShowDeleteTripModal] = useState(false)
 
-  const handleDelete = () => {
-    deleteTrip(id)
+  const handleDelete = async () => {
+    await deleteTrip(id)
     router.push('/trips')
   }
 
