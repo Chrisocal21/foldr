@@ -177,3 +177,15 @@ export type ExpenseCategory =
   | 'shopping' 
   | 'other'
 
+// Sync Log Types
+export interface SyncLogEntry {
+  timestamp: string
+  action: 'push' | 'pull' | 'full'
+  changes: {
+    added: number
+    updated: number
+    deleted: number
+  }
+  success: boolean
+  error?: string
+}

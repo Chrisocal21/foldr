@@ -88,6 +88,38 @@ export function logout() {
   localStorage.removeItem('foldr_user_email')
 }
 
+// Sync log management
+const SYNC_LOG_KEY = 'foldr_sync_log'
+const MAX_SYNC_LOG_ENTRIES = 10
+
+export interface SyncLogEntry {
+  timestamp: string
+  action: 'push' | 'pull' | 'full'
+  changes: {
+    added: number
+    updated: number
+    deleted: number
+  }
+  success: boolean
+  error?: string
+}
+
+export function getSyncLog(): SyncLogEntry[] {
+  if (typeof window === 'undefined') return []
+  const data = localStorage.getItem(SYNC_LOG_KEY)
+  return data ? JSON.parse(data) : []
+}
+
+function addSyncLogEntry(entry: SyncLogEntry): void {
+  const log = getSyncLog()
+  log.unshift(entry) // Add to beginning
+  // Keep only last N entries
+  if (log.length > MAX_SYNC_LOG_ENTRIES) {
+    log.length = MAX_SYNC_LOG_ENTRIES
+  }
+  localStorage.setItem(SYNC_LOG_KEY, JSON.stringify(log))
+}
+
 // Sync all local data to cloud
 export async function syncToCloud(): Promise<SyncResult> {
   const token = getAuthToken()
@@ -98,6 +130,14 @@ export async function syncToCloud(): Promise<SyncResult> {
     const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
     const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : null
     
+    // Count deletions for sync log
+    const deletionCount = deletedItems ? 
+      (deletedItems.trips?.length || 0) + 
+      (deletedItems.blocks?.length || 0) + 
+      (deletedItems.todos?.length || 0) + 
+      (deletedItems.packingItems?.length || 0) + 
+      (deletedItems.expenses?.length || 0) : 0
+    
     const localData = {
       trips: localStorage.getItem('foldr_trips'),
       blocks: localStorage.getItem('foldr_blocks'),
@@ -107,6 +147,8 @@ export async function syncToCloud(): Promise<SyncResult> {
       settings: localStorage.getItem('foldr_settings'),
       deletedItems: deletedItems, // Include deleted item IDs
     }
+    
+    console.log('[Sync] Pushing to cloud, deletedItems:', deletedItems)
     
     const response = await fetch(`${API_BASE}/sync/push`, {
       method: 'POST',
@@ -123,11 +165,39 @@ export async function syncToCloud(): Promise<SyncResult> {
       localStorage.setItem('foldr_last_sync', new Date().toISOString())
       // Clear deleted items after successful sync
       localStorage.removeItem('foldr_deleted_items')
+      
+      // Log the sync
+      addSyncLogEntry({
+        timestamp: new Date().toISOString(),
+        action: 'push',
+        changes: {
+          added: 0, // We don't track adds separately yet
+          updated: 0,
+          deleted: deletionCount
+        },
+        success: true
+      })
+      
       return { success: true }
     }
     
+    addSyncLogEntry({
+      timestamp: new Date().toISOString(),
+      action: 'push',
+      changes: { added: 0, updated: 0, deleted: 0 },
+      success: false,
+      error: data.error
+    })
+    
     return { success: false, error: data.error || 'Sync failed' }
   } catch (error) {
+    addSyncLogEntry({
+      timestamp: new Date().toISOString(),
+      action: 'push',
+      changes: { added: 0, updated: 0, deleted: 0 },
+      success: false,
+      error: 'Network error'
+    })
     return { success: false, error: 'Network error - will sync when online' }
   }
 }
@@ -193,11 +263,12 @@ function mergeArraysById<T extends { id: string; updatedAt?: string; createdAt?:
 
 // Pull data from cloud and MERGE with local (not overwrite)
 // Cloud is the source of truth for what items exist
-export async function syncFromCloud(): Promise<SyncResult> {
+export async function syncFromCloud(): Promise<SyncResult & { changes?: { added: number, removed: number } }> {
   const token = getAuthToken()
   if (!token) return { success: false, error: 'Not logged in' }
   
   try {
+    console.log('[Sync] Pulling from cloud...')
     const response = await fetch(`${API_BASE}/sync/pull`, {
       method: 'GET',
       headers: {
@@ -215,13 +286,15 @@ export async function syncFromCloud(): Promise<SyncResult> {
       const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
       const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : { trips: [], blocks: [], todos: [], packingItems: [], expenses: [] }
       
-      // MERGE cloud data with local
-      // Cloud is source of truth - items not in cloud are removed unless newly created locally
+      // Get current local data for comparison
       const localTrips = JSON.parse(localStorage.getItem('foldr_trips') || '[]')
       const localBlocks = JSON.parse(localStorage.getItem('foldr_blocks') || '[]')
       const localTodos = JSON.parse(localStorage.getItem('foldr_todos') || '[]')
       const localPackingItems = JSON.parse(localStorage.getItem('foldr_packing_items') || '[]')
       const localExpenses = JSON.parse(localStorage.getItem('foldr_expenses') || '[]')
+      
+      const localTripIds = new Set(localTrips.map((t: any) => t.id))
+      const localBlockIds = new Set(localBlocks.map((b: any) => b.id))
       
       // Get cloud data
       const cloudTrips = data.trips ? JSON.parse(data.trips) : []
@@ -230,12 +303,35 @@ export async function syncFromCloud(): Promise<SyncResult> {
       const cloudPackingItems = data.packingItems ? JSON.parse(data.packingItems) : []
       const cloudExpenses = data.expenses ? JSON.parse(data.expenses) : []
       
+      const cloudTripIds = new Set(cloudTrips.map((t: any) => t.id))
+      const cloudBlockIds = new Set(cloudBlocks.map((b: any) => b.id))
+      
+      console.log('[Sync] Cloud data received:', {
+        trips: cloudTrips.length,
+        blocks: cloudBlocks.length,
+        todos: cloudTodos.length
+      })
+      console.log('[Sync] Local data:', {
+        trips: localTrips.length,
+        blocks: localBlocks.length,
+        todos: localTodos.length
+      })
+      
       // Merge with lastSyncTime to properly handle deletions from other devices
       const mergedTrips = mergeArraysById(localTrips, cloudTrips, new Set(deletedItems.trips), lastSyncTime)
       const mergedBlocks = mergeArraysById(localBlocks, cloudBlocks, new Set(deletedItems.blocks), lastSyncTime)
       const mergedTodos = mergeArraysById(localTodos, cloudTodos, new Set(deletedItems.todos), lastSyncTime)
       const mergedPackingItems = mergeArraysById(localPackingItems, cloudPackingItems, new Set(deletedItems.packingItems), lastSyncTime)
       const mergedExpenses = mergeArraysById(localExpenses, cloudExpenses, new Set(deletedItems.expenses), lastSyncTime)
+      
+      // Calculate changes
+      const addedCount = 
+        cloudTrips.filter((t: any) => !localTripIds.has(t.id)).length +
+        cloudBlocks.filter((b: any) => !localBlockIds.has(b.id)).length
+      
+      const removedCount = 
+        localTrips.filter((t: any) => !cloudTripIds.has(t.id) && !deletedItems.trips?.includes(t.id)).length +
+        localBlocks.filter((b: any) => !cloudBlockIds.has(b.id) && !deletedItems.blocks?.includes(b.id)).length
       
       localStorage.setItem('foldr_trips', JSON.stringify(mergedTrips))
       localStorage.setItem('foldr_blocks', JSON.stringify(mergedBlocks))
@@ -247,16 +343,47 @@ export async function syncFromCloud(): Promise<SyncResult> {
       if (data.settings) localStorage.setItem('foldr_settings', data.settings)
       
       localStorage.setItem('foldr_last_sync', new Date().toISOString())
-      console.log('[Sync] Merged cloud data with local:', {
+      
+      // Log the sync
+      addSyncLogEntry({
+        timestamp: new Date().toISOString(),
+        action: 'pull',
+        changes: {
+          added: addedCount,
+          updated: 0,
+          deleted: removedCount
+        },
+        success: true
+      })
+      
+      console.log('[Sync] Merged result:', {
         trips: mergedTrips.length,
         blocks: mergedBlocks.length,
-        todos: mergedTodos.length
+        todos: mergedTodos.length,
+        added: addedCount,
+        removed: removedCount
       })
-      return { success: true }
+      
+      return { success: true, changes: { added: addedCount, removed: removedCount } }
     }
+    
+    addSyncLogEntry({
+      timestamp: new Date().toISOString(),
+      action: 'pull',
+      changes: { added: 0, updated: 0, deleted: 0 },
+      success: false,
+      error: data.error
+    })
     
     return { success: false, error: data.error || 'Sync failed' }
   } catch (error) {
+    addSyncLogEntry({
+      timestamp: new Date().toISOString(),
+      action: 'pull',
+      changes: { added: 0, updated: 0, deleted: 0 },
+      success: false,
+      error: 'Network error'
+    })
     return { success: false, error: 'Network error - working offline' }
   }
 }

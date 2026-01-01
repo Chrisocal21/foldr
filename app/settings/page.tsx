@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useSettings, SUPPORTED_CURRENCIES } from '@/lib/settings-context'
 import { AIRLINES, AIRPORTS, HOTEL_CHAINS } from '@/lib/travel-data'
 import { ComboBox } from '@/components/ComboBox'
-import { isLoggedIn, getUserEmail, getLastSyncTime, logout, fullSync } from '@/lib/cloud-sync'
+import { isLoggedIn, getUserEmail, getLastSyncTime, logout, fullSync, getSyncLog, SyncLogEntry } from '@/lib/cloud-sync'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -21,6 +21,8 @@ export default function SettingsPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [syncing, setSyncing] = useState(false)
+  const [syncLog, setSyncLog] = useState<SyncLogEntry[]>([])
+  const [showSyncLog, setShowSyncLog] = useState(false)
   
   // Password change state
   const [showChangePassword, setShowChangePassword] = useState(false)
@@ -35,13 +37,17 @@ export default function SettingsPage() {
     setLoggedIn(isLoggedIn())
     setUserEmail(getUserEmail())
     setLastSync(getLastSyncTime())
+    setSyncLog(getSyncLog())
   }, [])
 
   const handleSync = async () => {
     setSyncing(true)
     await fullSync()
     setLastSync(getLastSyncTime())
+    setSyncLog(getSyncLog())
     setSyncing(false)
+    // Reload page to reflect any changes from sync
+    window.location.reload()
   }
 
   const handleLogout = () => {
@@ -193,26 +199,86 @@ export default function SettingsPage() {
                 </div>
                 
                 {/* Sync status */}
-                <div className="p-4 flex items-center justify-between">
-                  <div>
-                    <p className="text-white font-medium">Sync</p>
-                    <p className="text-sm text-slate-400">
-                      {lastSync 
-                        ? `Last synced ${new Date(lastSync).toLocaleString()}`
-                        : 'Not synced yet'
-                      }
-                    </p>
+                <div className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-white font-medium">Sync</p>
+                      <p className="text-sm text-slate-400">
+                        {lastSync 
+                          ? `Last synced ${new Date(lastSync).toLocaleString()}`
+                          : 'Not synced yet'
+                        }
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowSyncLog(!showSyncLog)}
+                        className="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors text-sm"
+                      >
+                        {showSyncLog ? 'Hide Log' : 'Show Log'}
+                      </button>
+                      <button
+                        onClick={handleSync}
+                        disabled={syncing}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg transition-colors flex items-center gap-2"
+                      >
+                        <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                          <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" />
+                        </svg>
+                        {syncing ? 'Syncing...' : 'Sync Now'}
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={handleSync}
-                    disabled={syncing}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg transition-colors flex items-center gap-2"
-                  >
-                    <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" />
-                    </svg>
-                    {syncing ? 'Syncing...' : 'Sync Now'}
-                  </button>
+                  
+                  {/* Sync Log */}
+                  {showSyncLog && (
+                    <div className="mt-4 space-y-2">
+                      <p className="text-sm text-slate-400 font-medium">Recent Sync Activity</p>
+                      {syncLog.length === 0 ? (
+                        <p className="text-sm text-slate-500">No sync activity yet</p>
+                      ) : (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {syncLog.slice(0, 5).map((entry, index) => (
+                            <div 
+                              key={index}
+                              className={`p-3 rounded-lg text-sm ${
+                                entry.success 
+                                  ? 'bg-slate-700/50' 
+                                  : 'bg-red-500/10 border border-red-500/20'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {entry.success ? (
+                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                  ) : (
+                                    <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                  )}
+                                  <span className="text-white capitalize">{entry.action}</span>
+                                </div>
+                                <span className="text-slate-400 text-xs">
+                                  {new Date(entry.timestamp).toLocaleString()}
+                                </span>
+                              </div>
+                              {entry.success && (entry.changes.added > 0 || entry.changes.deleted > 0) && (
+                                <div className="mt-1 flex gap-3 text-xs">
+                                  {entry.changes.added > 0 && (
+                                    <span className="text-green-400">+{entry.changes.added} added</span>
+                                  )}
+                                  {entry.changes.deleted > 0 && (
+                                    <span className="text-red-400">-{entry.changes.deleted} removed</span>
+                                  )}
+                                </div>
+                              )}
+                              {!entry.success && entry.error && (
+                                <p className="mt-1 text-red-400 text-xs">{entry.error}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 
                 {/* Logout */}
