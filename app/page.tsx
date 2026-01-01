@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { login, signup, fullSync, isLoggedIn } from '@/lib/cloud-sync'
+import { clearAllLocalData } from '@/lib/storage'
 
 // Loading component shown during SSR and initial client render
 function AuthLoading() {
@@ -315,9 +316,15 @@ function AuthFormInner() {
 
         {/* Skip link */}
         <p className="text-center mt-6">
-          <Link href="/trips" className="text-slate-500 hover:text-slate-400 text-sm">
+          <button
+            onClick={() => {
+              clearAllLocalData()
+              router.push('/trips')
+            }}
+            className="text-slate-500 hover:text-slate-400 text-sm"
+          >
             Continue without account →
-          </Link>
+          </button>
         </p>
       </div>
     </div>

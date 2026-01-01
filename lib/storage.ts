@@ -5,6 +5,20 @@ const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
 const TODOS_KEY = 'foldr_todos'
 const DELETED_ITEMS_KEY = 'foldr_deleted_items'
+const PACKING_KEY = 'foldr_packing_items'
+const EXPENSES_KEY = 'foldr_expenses'
+
+// Clear all local data - used when "continue without account" to start fresh
+export function clearAllLocalData(): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(TRIPS_KEY)
+  localStorage.removeItem(BLOCKS_KEY)
+  localStorage.removeItem(TODOS_KEY)
+  localStorage.removeItem(DELETED_ITEMS_KEY)
+  localStorage.removeItem(PACKING_KEY)
+  localStorage.removeItem(EXPENSES_KEY)
+  localStorage.removeItem('foldr_auth_token')
+}
 
 // Track deleted item IDs for sync
 interface DeletedItems {
@@ -521,7 +535,6 @@ export function searchAll(query: string): { trips: Trip[], blocks: Block[] } {
 }
 
 // Packing List
-const PACKING_KEY = 'foldr_packing_items'
 
 export function getPackingItems(tripId: string): PackingItem[] {
   if (typeof window === 'undefined') return []
@@ -652,7 +665,6 @@ export const PACKING_TEMPLATES: PackingTemplate[] = [
 ]
 
 // Expenses
-const EXPENSES_KEY = 'foldr_expenses'
 
 export function getExpenses(tripId?: string): Expense[] {
   if (typeof window === 'undefined') return []
