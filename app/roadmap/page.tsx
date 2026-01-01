@@ -111,7 +111,7 @@ export default function RoadmapPage() {
       </main>
 
       {/* Floating Menu */}
-      <FloatingMenu hideLinks={['roadmap']} />
+      <FloatingMenu />
     </div>
   )
 }

@@ -311,7 +311,7 @@ export default function BuildPage() {
       </div>
 
       {/* Floating Menu */}
-      <FloatingMenu hideLinks={['build']} />
+      <FloatingMenu />
     </div>
   );
 }
