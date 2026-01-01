@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Trip, Block, Todo } from '@/lib/types'
+import { Trip, Block, Todo, TodoPriority, TodoStatus, TripCategory } from '@/lib/types'
 import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, TIMEZONES, getTimeAtTimezone, getTimezoneAbbr, getTodos, toggleTodo, deleteTodo, saveTodo } from '@/lib/storage'
 import { BlockCard } from '@/components/BlockCard'
 import { exportTripToPDF } from '@/lib/pdf-export'
@@ -20,6 +20,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [blocks, setBlocks] = useState<Block[]>([])
   const [tripTodos, setTripTodos] = useState<Todo[]>([])
   const [newTodoText, setNewTodoText] = useState('')
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [dueDate, setDueDate] = useState('')
+  const [priority, setPriority] = useState<TodoPriority | ''>("")
+  const [draggedTodo, setDraggedTodo] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [showTasksMenu, setShowTasksMenu] = useState(false)
   const [tasksCollapsed, setTasksCollapsed] = useState(() => {
@@ -36,6 +40,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [startDateValue, setStartDateValue] = useState('')
   const [endDateValue, setEndDateValue] = useState('')
   const [currentTemp, setCurrentTemp] = useState<{ temp: number; icon: string } | null>(null)
+  const [editingCategory, setEditingCategory] = useState(false)
+  const [sunData, setSunData] = useState<{ sunrise: string; sunset: string } | null>(null)
 
   const handleToggleTasksCollapse = (collapsed: boolean) => {
     setTasksCollapsed(collapsed)
@@ -59,21 +65,42 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     { name: 'Teal', value: '#14b8a6' },
   ]
 
+  // SVG icons for categories
+  const categoryIcons: Record<TripCategory | 'default', React.ReactNode> = {
+    vacation: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>,
+    business: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+    family: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    solo: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+    adventure: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>,
+    other: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z"/></svg>,
+    default: <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2H2v10l9.29 9.29a1 1 0 0 0 1.42 0l6.58-6.58a1 1 0 0 0 0-1.42L12 2Z"/><circle cx="7" cy="7" r="1"/></svg>,
+  }
+
+  const tripCategories: { value: TripCategory; label: string }[] = [
+    { value: 'vacation', label: 'Vacation' },
+    { value: 'business', label: 'Business' },
+    { value: 'family', label: 'Family' },
+    { value: 'solo', label: 'Solo' },
+    { value: 'adventure', label: 'Adventure' },
+    { value: 'other', label: 'Other' },
+  ]
+
   useEffect(() => {
     loadTripData()
   }, [id])
 
-  // Fetch current temperature
+  // Fetch current temperature and sunrise/sunset
   useEffect(() => {
     if (!trip?.latitude || !trip?.longitude) return
     
-    const fetchCurrentTemp = async () => {
+    const fetchWeatherData = async () => {
       try {
         const response = await fetch(
           `https://api.open-meteo.com/v1/forecast?` +
           `latitude=${trip.latitude}&longitude=${trip.longitude}&` +
           `current=temperature_2m,weather_code&` +
-          `timezone=auto`,
+          `daily=sunrise,sunset&` +
+          `timezone=auto&forecast_days=1`,
           { signal: AbortSignal.timeout(10000) }
         )
         if (!response.ok) return
@@ -84,12 +111,22 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             icon: getWeatherIcon(data.current.weather_code)
           })
         }
+        if (data.daily?.sunrise?.[0] && data.daily?.sunset?.[0]) {
+          const formatTime = (isoStr: string) => {
+            const date = new Date(isoStr)
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+          }
+          setSunData({
+            sunrise: formatTime(data.daily.sunrise[0]),
+            sunset: formatTime(data.daily.sunset[0])
+          })
+        }
       } catch {
         // Silently fail - weather is not critical
       }
     }
     
-    fetchCurrentTemp()
+    fetchWeatherData()
   }, [trip?.latitude, trip?.longitude])
 
   // Weather icon helper
@@ -113,6 +150,87 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     }
     return `${Math.round(celsius)}°C`
   }
+
+  // Category change handler
+  const handleCategoryChange = (category: TripCategory | undefined) => {
+    if (trip) {
+      const updatedTrip = { ...trip, category }
+      saveTrip(updatedTrip)
+      setTrip(updatedTrip)
+      setEditingCategory(false)
+    }
+  }
+
+  // Calculate trip duration in nights
+  const getTripDuration = () => {
+    if (!trip) return null
+    const start = parseLocalDate(trip.startDate)
+    const end = parseLocalDate(trip.endDate)
+    const nights = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+    return nights === 1 ? '1 night' : `${nights} nights`
+  }
+
+  // Calculate timezone difference from home
+  const getTimezoneDiff = () => {
+    if (!trip?.timezone) return null
+    try {
+      const now = new Date()
+      const localOffset = now.getTimezoneOffset() // in minutes, negative for ahead of UTC
+      const destTime = new Date(now.toLocaleString('en-US', { timeZone: trip.timezone }))
+      const localTime = new Date(now.toLocaleString('en-US'))
+      const diffHours = Math.round((destTime.getTime() - localTime.getTime()) / (1000 * 60 * 60))
+      if (diffHours === 0) return 'Same as home'
+      return diffHours > 0 ? `+${diffHours}h from home` : `${diffHours}h from home`
+    } catch {
+      return null
+    }
+  }
+
+  // Find the next upcoming block (by departure/check-in/pickup time)
+  const getNextUpBlockId = (): string | null => {
+    const now = new Date()
+    let nextBlock: { id: string; time: Date } | null = null
+
+    for (const block of blocks) {
+      let blockTime: Date | null = null
+
+      if (block.type === 'flight' && block.departureTime) {
+        const [date, time] = block.departureTime.split('T')
+        if (date && time) {
+          const [y, m, d] = date.split('-').map(Number)
+          const [h, min] = time.split(':').map(Number)
+          blockTime = new Date(y, m - 1, d, h, min)
+        }
+      } else if (block.type === 'hotel' && block.checkInDate) {
+        const [y, m, d] = block.checkInDate.split('-').map(Number)
+        blockTime = new Date(y, m - 1, d, 15, 0) // Assume 3 PM check-in
+      } else if (block.type === 'transport' && block.pickupDateTime) {
+        const [date, time] = block.pickupDateTime.split('T')
+        if (date && time) {
+          const [y, m, d] = date.split('-').map(Number)
+          const [h, min] = time.split(':').map(Number)
+          blockTime = new Date(y, m - 1, d, h, min)
+        }
+      } else if (block.type === 'layover' && block.departureTime) {
+        const [date, time] = block.departureTime.split('T')
+        if (date && time) {
+          const [y, m, d] = date.split('-').map(Number)
+          const [h, min] = time.split(':').map(Number)
+          blockTime = new Date(y, m - 1, d, h, min)
+        }
+      }
+
+      if (blockTime && blockTime > now) {
+        if (!nextBlock || blockTime < nextBlock.time) {
+          nextBlock = { id: block.id, time: blockTime }
+        }
+      }
+    }
+
+    return nextBlock?.id || null
+  }
+
+  const nextUpBlockId = getNextUpBlockId()
 
   const loadTripData = () => {
     const tripData = getTripById(id)
@@ -192,14 +310,114 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       id: crypto.randomUUID(),
       text: newTodoText.trim(),
       completed: false,
+      status: 'todo',
       tripIds: [id],
+      dueDate: dueDate || undefined,
+      priority: priority || undefined,
       createdAt: now,
       updatedAt: now,
     }
     saveTodo(todo)
     setNewTodoText('')
+    setDueDate('')
+    setPriority('')
+    setShowAdvanced(false)
     loadTripData()
   }
+
+  // Kanban helpers
+  const moveToColumn = (todoId: string, newStatus: TodoStatus) => {
+    const todo = tripTodos.find(t => t.id === todoId)
+    if (!todo) return
+    const updatedTodo: Todo = {
+      ...todo,
+      status: newStatus,
+      completed: newStatus === 'done',
+      updatedAt: new Date().toISOString(),
+    }
+    saveTodo(updatedTodo)
+    loadTripData()
+  }
+
+  const handleDragStart = (todoId: string) => setDraggedTodo(todoId)
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault()
+  const handleDrop = (e: React.DragEvent, status: TodoStatus) => {
+    e.preventDefault()
+    if (draggedTodo) {
+      moveToColumn(draggedTodo, status)
+      setDraggedTodo(null)
+    }
+  }
+
+  const formatDueDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    if (date.getTime() === today.getTime()) return 'Today'
+    if (date.getTime() === tomorrow.getTime()) return 'Tmrw'
+    if (date < today) return 'Late'
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  const getDueDateColor = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (date < today) return 'text-red-400 bg-red-500/20'
+    if (date.getTime() === today.getTime()) return 'text-orange-400 bg-orange-500/20'
+    return 'text-slate-400 bg-slate-700'
+  }
+
+  const getPriorityColor = (p: TodoPriority) => {
+    switch (p) {
+      case 'high': return 'border-l-red-500'
+      case 'medium': return 'border-l-yellow-500'
+      case 'low': return 'border-l-green-500'
+    }
+  }
+
+  const getPriorityDot = (p: TodoPriority) => {
+    switch (p) {
+      case 'high': return 'bg-red-500'
+      case 'medium': return 'bg-yellow-500'
+      case 'low': return 'bg-green-500'
+    }
+  }
+
+  // Group todos by status
+  const todosByStatus: Record<TodoStatus, Todo[]> = { 'todo': [], 'in-progress': [], 'done': [] }
+  tripTodos.forEach(todo => {
+    const status: TodoStatus = todo.status || (todo.completed ? 'done' : 'todo')
+    todosByStatus[status].push(todo)
+  })
+
+  // Sort by priority then due date
+  const sortTodos = (arr: Todo[]) => arr.sort((a, b) => {
+    const priorityOrder = { high: 0, medium: 1, low: 2 }
+    const aPriority = a.priority ? priorityOrder[a.priority] : 3
+    const bPriority = b.priority ? priorityOrder[b.priority] : 3
+    if (aPriority !== bPriority) return aPriority - bPriority
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate)
+    if (a.dueDate) return -1
+    if (b.dueDate) return 1
+    return 0
+  })
+
+  Object.keys(todosByStatus).forEach(key => {
+    todosByStatus[key as TodoStatus] = sortTodos(todosByStatus[key as TodoStatus])
+  })
+
+  const todoCount = todosByStatus['todo'].length + todosByStatus['in-progress'].length
+
+  const kanbanColumns: { key: TodoStatus; label: string; icon: string; color: string }[] = [
+    { key: 'todo', label: 'To Do', icon: '○', color: 'text-slate-400' },
+    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-blue-400' },
+    { key: 'done', label: 'Done', icon: '●', color: 'text-green-400' },
+  ]
 
   if (!trip) return null
 
@@ -509,6 +727,98 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
           </div>
+
+          {/* Trip Info Row: Category, Duration, Timezone Diff, Sunrise/Sunset */}
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            {/* Category Badge */}
+            {editingCategory ? (
+              <div className="flex items-center gap-2 bg-slate-800 rounded-lg p-2 flex-wrap">
+                {tripCategories.map((cat) => (
+                  <button
+                    key={cat.value}
+                    onClick={() => {
+                      handleCategoryChange(cat.value as TripCategory);
+                      setEditingCategory(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
+                      trip.category === cat.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                    }`}
+                  >
+                    {categoryIcons[cat.value]}
+                    {cat.label}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    handleCategoryChange(undefined);
+                    setEditingCategory(false);
+                  }}
+                  className="p-1.5 text-slate-500 hover:text-slate-300"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M18 6 6 18M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingCategory(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                  trip.category
+                    ? 'bg-slate-800/80 text-slate-200 hover:bg-slate-700'
+                    : 'bg-slate-800/50 text-slate-500 hover:text-slate-300 hover:bg-slate-800'
+                }`}
+              >
+                {categoryIcons[trip.category || 'default']}
+                <span>{tripCategories.find(c => c.value === trip.category)?.label || 'Add category'}</span>
+              </button>
+            )}
+
+            {/* Trip Duration */}
+            {getTripDuration() && (
+              <div className="flex items-center gap-1.5 text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-lg text-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+                </svg>
+                <span>{getTripDuration()}</span>
+              </div>
+            )}
+
+            {/* Timezone Difference */}
+            {getTimezoneDiff() && (
+              <div className="flex items-center gap-1.5 text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-lg text-sm">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                </svg>
+                <span>{getTimezoneDiff()}</span>
+              </div>
+            )}
+
+            {/* Sunrise/Sunset */}
+            {sunData && (
+              <div className="flex items-center gap-3 text-slate-400 bg-slate-800/50 px-3 py-1.5 rounded-lg text-sm">
+                <span className="flex items-center gap-1">
+                  <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M12 16v4"/>
+                  </svg>
+                  <span>{sunData.sunrise}</span>
+                </span>
+                <span className="text-slate-600">·</span>
+                <span className="flex items-center gap-1">
+                  <svg className="w-4 h-4 text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M12 10V2M4.93 10.93l1.41 1.41M2 18h2M20 18h2M19.07 10.93l-1.41 1.41"/>
+                    <path d="M22 18H2"/>
+                    <path d="M8 18a4 4 0 1 1 8 0"/>
+                  </svg>
+                  <span>{sunData.sunset}</span>
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Add Block Button */}
@@ -519,7 +829,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
           + Add Block
         </Link>
 
-        {/* Trip Tasks - Block Card Style */}
+        {/* Trip Tasks - Kanban Board */}
+        {tripTodos.length > 0 && (
         <div className="relative group mb-4">
           {tasksCollapsed ? (
             /* Collapsed View */
@@ -527,18 +838,17 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               onClick={() => handleToggleTasksCollapse(false)}
               className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
             >
-              <div className="bg-green-600/20 p-1.5 rounded-lg">
-                <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M9 12l2 2 4-4" />
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
+              <div className="bg-blue-600/20 p-1.5 rounded-lg">
+                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="7" height="18" rx="1" />
+                  <rect x="14" y="3" width="7" height="12" rx="1" />
                 </svg>
               </div>
               <div className="flex-1 min-w-0">
-                <span className="text-white font-medium">Tasks</span>
+                <span className="text-white font-medium">Task Board</span>
                 <span className="text-slate-500 mx-2">·</span>
                 <span className="text-slate-400 text-sm">
-                  {tripTodos.filter(t => !t.completed).length} pending
-                  {tripTodos.filter(t => t.completed).length > 0 && `, ${tripTodos.filter(t => t.completed).length} done`}
+                  {todoCount} active{todosByStatus['done'].length > 0 && `, ${todosByStatus['done'].length} done`}
                 </span>
               </div>
               <button
@@ -571,21 +881,21 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
           ) : (
-            /* Expanded View */
+            /* Expanded Kanban View */
             <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
                 <div className="flex items-center gap-3">
-                  <div className="bg-green-600/20 p-1.5 rounded-lg">
-                    <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                      <path d="M9 12l2 2 4-4" />
-                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <div className="bg-blue-600/20 p-1.5 rounded-lg">
+                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <rect x="3" y="3" width="7" height="18" rx="1" />
+                      <rect x="14" y="3" width="7" height="12" rx="1" />
                     </svg>
                   </div>
-                  <span className="text-white font-medium">Tasks</span>
-                  {tripTodos.filter(t => !t.completed).length > 0 && (
-                    <span className="text-xs bg-green-600/20 text-green-400 px-2 py-0.5 rounded-full">
-                      {tripTodos.filter(t => !t.completed).length}
+                  <span className="text-white font-medium">Task Board</span>
+                  {todoCount > 0 && (
+                    <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded-full">
+                      {todoCount} active
                     </span>
                   )}
                 </div>
@@ -617,93 +927,147 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
               
-              {/* Content */}
-              <div className="p-4">
-                {/* Add Todo Input */}
-                <div className="flex gap-2 mb-3">
+              {/* Add Todo Section */}
+              <div className="p-3 border-b border-slate-700">
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={newTodoText}
                     onChange={(e) => setNewTodoText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
                     placeholder="Add a task..."
-                    className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-green-500"
+                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500"
                   />
+                  <button
+                    onClick={() => setShowAdvanced(!showAdvanced)}
+                    className={`px-3 py-2 rounded-lg border transition-colors ${(dueDate || priority) ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-600 text-slate-400 hover:text-white'}`}
+                    title="Due date & Priority"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <path d="M16 2v4M8 2v4M3 10h18" />
+                    </svg>
+                  </button>
                   <button
                     onClick={handleAddTodo}
                     disabled={!newTodoText.trim()}
-                    className="bg-green-600 hover:bg-green-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-3 py-2 rounded-lg transition-colors"
+                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-3 py-2 rounded-lg transition-colors"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path d="M12 5v14m-7-7h14" />
                     </svg>
                   </button>
                 </div>
-
-                {/* Todo List */}
-                {tripTodos.length === 0 ? (
-                  <div className="text-center py-6 text-slate-500">
-                    <p className="text-sm">No tasks yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {/* Incomplete todos */}
-                    {tripTodos.filter(t => !t.completed).map(todo => (
-                      <div key={todo.id} className="flex items-center gap-2 bg-slate-900 rounded-lg px-3 py-2 border border-slate-700 group">
-                        <button 
-                          onClick={() => handleToggleTodo(todo.id)} 
-                          className="text-slate-400 hover:text-green-400 transition-colors shrink-0"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <circle cx="12" cy="12" r="10" />
-                          </svg>
-                        </button>
-                        <span className="flex-1 text-white text-sm">{todo.text}</span>
-                        <button 
-                          onClick={() => handleDeleteTodo(todo.id)} 
-                          className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                
+                {/* Advanced Options (Due Date & Priority) */}
+                {showAdvanced && (
+                  <div className="flex flex-wrap gap-2 mt-2 p-2 bg-slate-900 rounded-lg border border-slate-700">
+                    <div className="w-full flex gap-2">
+                      <div className="flex-1">
+                        <label className="text-slate-500 text-xs block mb-1">Due Date</label>
+                        <input
+                          type="date"
+                          value={dueDate}
+                          onChange={(e) => setDueDate(e.target.value)}
+                          className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                        />
                       </div>
-                    ))}
-                    
-                    {/* Completed todos */}
-                    {tripTodos.filter(t => t.completed).length > 0 && (
-                      <>
-                        <div className="text-xs text-slate-500 uppercase tracking-wide pt-2 pb-1">Completed</div>
-                        {tripTodos.filter(t => t.completed).map(todo => (
-                          <div key={todo.id} className="flex items-center gap-2 bg-slate-900/50 rounded-lg px-3 py-2 border border-slate-700/50 group">
-                            <button 
-                              onClick={() => handleToggleTodo(todo.id)} 
-                              className="text-green-500 shrink-0"
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M9 12l2 2 4-4" />
-                                <circle cx="12" cy="12" r="10" />
-                              </svg>
-                            </button>
-                            <span className="flex-1 text-slate-500 text-sm line-through">{todo.text}</span>
-                            <button 
-                              onClick={() => handleDeleteTodo(todo.id)} 
-                              className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 shrink-0"
-                            >
-                              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                                <path d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          </div>
-                        ))}
-                      </>
-                    )}
+                      <div className="flex-1">
+                        <label className="text-slate-500 text-xs block mb-1">Priority</label>
+                        <select
+                          value={priority}
+                          onChange={(e) => setPriority(e.target.value as TodoPriority | '')}
+                          className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="">None</option>
+                          <option value="low">Low</option>
+                          <option value="medium">Medium</option>
+                          <option value="high">High</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 )}
+              </div>
+
+              {/* Kanban Columns */}
+              <div className="p-3 overflow-x-auto">
+                <div className="flex gap-3 min-h-[180px]">
+                  {kanbanColumns.map(col => (
+                    <div
+                      key={col.key}
+                      className="flex-1 min-w-[120px] flex flex-col"
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, col.key)}
+                    >
+                      {/* Column Header */}
+                      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-700">
+                        <span className={col.color}>{col.icon}</span>
+                        <span className="text-xs font-medium text-slate-300">{col.label}</span>
+                        <span className="text-xs text-slate-500">({todosByStatus[col.key].length})</span>
+                      </div>
+
+                      {/* Column Content */}
+                      <div className={`flex-1 space-y-2 overflow-y-auto min-h-[100px] p-1 rounded-lg transition-colors ${
+                        draggedTodo ? 'bg-slate-900/50 border border-dashed border-slate-600' : ''
+                      }`}>
+                        {todosByStatus[col.key].length === 0 ? (
+                          <div className="text-center py-4 text-slate-600 text-xs">
+                            {col.key === 'todo' ? 'No tasks' : col.key === 'in-progress' ? 'Drag here' : 'Completed'}
+                          </div>
+                        ) : (
+                          todosByStatus[col.key].map(todo => (
+                            <div
+                              key={todo.id}
+                              draggable
+                              onDragStart={() => handleDragStart(todo.id)}
+                              className={`group bg-slate-900 rounded-lg p-2 border-l-2 cursor-grab active:cursor-grabbing transition-all hover:bg-slate-800 ${
+                                todo.priority ? getPriorityColor(todo.priority) : 'border-l-slate-600'
+                              } ${draggedTodo === todo.id ? 'opacity-50' : ''}`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-xs leading-tight ${todo.status === 'done' ? 'text-slate-500 line-through' : 'text-white'}`}>
+                                    {todo.text}
+                                  </p>
+                                  <div className="flex flex-wrap items-center gap-1 mt-1">
+                                    {todo.priority && (
+                                      <span className={`w-1.5 h-1.5 rounded-full ${getPriorityDot(todo.priority)}`} />
+                                    )}
+                                    {todo.dueDate && (
+                                      <span className={`text-[10px] px-1 rounded ${getDueDateColor(todo.dueDate)}`}>
+                                        {formatDueDate(todo.dueDate)}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteTodo(todo.id)}
+                                  className="text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                                >
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="px-4 py-2 bg-slate-900 border-t border-slate-700 text-xs text-slate-500 flex justify-between">
+                <span>Drag tasks between columns</span>
+                <span>{tripTodos.length} total</span>
               </div>
             </div>
           )}
         </div>
+        )}
 
         {/* Timeline */}
         {blocks.length === 0 ? (
@@ -725,6 +1089,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 onDuplicate={loadTripData}
                 isFirst={index === 0}
                 isLast={index === blocks.length - 1}
+                isNextUp={block.id === nextUpBlockId}
               />
             ))}
           </div>

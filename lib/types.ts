@@ -1,5 +1,7 @@
 export type TripStatus = 'upcoming' | 'active' | 'past'
 
+export type TripCategory = 'business' | 'vacation' | 'family' | 'solo' | 'adventure' | 'other'
+
 export type BlockType = 'flight' | 'hotel' | 'layover' | 'work' | 'transport' | 'screenshot' | 'note' | 'packing' | 'expense'
 
 export interface Trip {
@@ -11,6 +13,7 @@ export interface Trip {
   startDate: string // ISO date string
   endDate: string // ISO date string
   color?: string
+  category?: TripCategory // Trip category tag
   favorite?: boolean
   archived?: boolean
   timezone?: string // IANA timezone like 'America/New_York'

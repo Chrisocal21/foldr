@@ -36,12 +36,98 @@ function formatDateTime(dateTimeStr: string): string {
   return date.toLocaleString()
 }
 
+// Helper to calculate flight check-in status
+function getFlightCheckInStatus(departureTime: string): { canCheckIn: boolean; countdown: string | null; checkInOpen: boolean } {
+  if (!departureTime) return { canCheckIn: false, countdown: null, checkInOpen: false }
+  
+  const [datePart, timePart] = departureTime.split('T')
+  if (!datePart || !timePart) return { canCheckIn: false, countdown: null, checkInOpen: false }
+  
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hours, minutes] = timePart.split(':').map(Number)
+  const departure = new Date(year, month - 1, day, hours, minutes)
+  const now = new Date()
+  
+  // Check-in typically opens 24 hours before departure
+  const checkInOpens = new Date(departure.getTime() - 24 * 60 * 60 * 1000)
+  const timeUntilCheckIn = checkInOpens.getTime() - now.getTime()
+  const timeUntilDeparture = departure.getTime() - now.getTime()
+  
+  // Already departed
+  if (timeUntilDeparture < 0) return { canCheckIn: false, countdown: null, checkInOpen: false }
+  
+  // Check-in is open (within 24 hours of departure)
+  if (timeUntilCheckIn <= 0) {
+    const hoursLeft = Math.floor(timeUntilDeparture / (60 * 60 * 1000))
+    return { 
+      canCheckIn: true, 
+      countdown: hoursLeft > 0 ? `${hoursLeft}h until departure` : 'Departing soon!',
+      checkInOpen: true 
+    }
+  }
+  
+  // Check-in opens soon (within 48 hours)
+  if (timeUntilCheckIn < 24 * 60 * 60 * 1000) {
+    const hoursUntil = Math.floor(timeUntilCheckIn / (60 * 60 * 1000))
+    const minsUntil = Math.floor((timeUntilCheckIn % (60 * 60 * 1000)) / (60 * 1000))
+    return { 
+      canCheckIn: false, 
+      countdown: hoursUntil > 0 ? `Check-in opens in ${hoursUntil}h ${minsUntil}m` : `Check-in opens in ${minsUntil}m`,
+      checkInOpen: false 
+    }
+  }
+  
+  return { canCheckIn: false, countdown: null, checkInOpen: false }
+}
+
+// Deep link generators
+function getGoogleMapsLink(address: string): string {
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`
+}
+
+function getAppleMapsLink(address: string): string {
+  return `https://maps.apple.com/?q=${encodeURIComponent(address)}`
+}
+
+function getUberDeepLink(address: string): string {
+  return `https://m.uber.com/ul/?action=setPickup&dropoff[formatted_address]=${encodeURIComponent(address)}`
+}
+
+// Airline check-in links (common airlines)
+function getAirlineCheckInLink(airline: string): string | null {
+  const airlineLower = airline.toLowerCase()
+  const checkInLinks: Record<string, string> = {
+    'united': 'https://www.united.com/en/us/checkin',
+    'ua': 'https://www.united.com/en/us/checkin',
+    'delta': 'https://www.delta.com/mytrips/',
+    'dl': 'https://www.delta.com/mytrips/',
+    'american': 'https://www.aa.com/homePage.do',
+    'aa': 'https://www.aa.com/homePage.do',
+    'southwest': 'https://www.southwest.com/air/check-in/',
+    'wn': 'https://www.southwest.com/air/check-in/',
+    'jetblue': 'https://www.jetblue.com/check-in',
+    'b6': 'https://www.jetblue.com/check-in',
+    'alaska': 'https://www.alaskaair.com/checkin',
+    'as': 'https://www.alaskaair.com/checkin',
+    'spirit': 'https://www.spirit.com/check-in',
+    'nk': 'https://www.spirit.com/check-in',
+    'frontier': 'https://www.flyfrontier.com/travel/my-trips/check-in/',
+    'f9': 'https://www.flyfrontier.com/travel/my-trips/check-in/',
+  }
+  
+  for (const [key, url] of Object.entries(checkInLinks)) {
+    if (airlineLower.includes(key)) return url
+  }
+  return null
+}
+
 interface BlockCardProps {
   block: Block
   onDelete?: (blockId: string) => void
   onDuplicate?: () => void
   isFirst?: boolean
   isLast?: boolean
+  isNextUp?: boolean
 }
 
 // Helper to get block icon and color
@@ -145,7 +231,8 @@ export function BlockCard({
   onDelete, 
   onDuplicate,
   isFirst, 
-  isLast
+  isLast,
+  isNextUp
 }: BlockCardProps) {
   const [showMenu, setShowMenu] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -288,7 +375,17 @@ export function BlockCard({
   }
 
   return (
-    <div className="relative group">
+    <div className={`relative group ${isNextUp ? 'ring-2 ring-green-500/50 rounded-xl' : ''}`}>
+      {/* Next Up Indicator */}
+      {isNextUp && (
+        <div className="absolute -top-2.5 left-4 z-10 bg-green-600 text-white text-xs font-bold px-2.5 py-0.5 rounded-full shadow-lg flex items-center gap-1">
+          <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+          </svg>
+          NEXT UP
+        </div>
+      )}
+      
       {/* Control Overlay - Menu only */}
       <div className="absolute top-2 right-2 z-10">
         <div className="relative">
@@ -391,8 +488,48 @@ export function BlockCard({
 }
 
 function FlightCard({ block }: { block: FlightBlock }) {
+  const checkInStatus = getFlightCheckInStatus(block.departureTime)
+  const airlineCheckInUrl = getAirlineCheckInLink(block.airline)
+  
   return (
     <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
+      {/* Check-in Alert Banner */}
+      {checkInStatus.checkInOpen && (
+        <div className="bg-green-600/20 border border-green-500/30 rounded-lg px-4 py-3 mb-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z" />
+            </svg>
+            <div>
+              <span className="text-green-400 font-semibold text-sm">Check-in is OPEN!</span>
+              {checkInStatus.countdown && (
+                <span className="text-green-300 text-xs ml-2">• {checkInStatus.countdown}</span>
+              )}
+            </div>
+          </div>
+          {airlineCheckInUrl && (
+            <a
+              href={airlineCheckInUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+            >
+              Check In →
+            </a>
+          )}
+        </div>
+      )}
+      
+      {/* Check-in Countdown (when opens soon) */}
+      {!checkInStatus.checkInOpen && checkInStatus.countdown && (
+        <div className="bg-yellow-600/20 border border-yellow-500/30 rounded-lg px-4 py-2 mb-4 flex items-center gap-2">
+          <svg className="w-4 h-4 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+          </svg>
+          <span className="text-yellow-300 text-sm">{checkInStatus.countdown}</span>
+        </div>
+      )}
+      
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="bg-blue-600/20 p-2 rounded-lg">
@@ -437,6 +574,34 @@ function FlightCard({ block }: { block: FlightBlock }) {
             {block.notes}
           </div>
         )}
+        
+        {/* Deep Links */}
+        <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-700">
+          {airlineCheckInUrl && (
+            <a
+              href={airlineCheckInUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2Z" />
+              </svg>
+              Airline
+            </a>
+          )}
+          <a
+            href={`https://www.google.com/search?q=${encodeURIComponent(block.airline + ' ' + block.flightNumber + ' flight status')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+            </svg>
+            Flight Status
+          </a>
+        </div>
       </div>
     </div>
   )
@@ -476,6 +641,46 @@ function HotelCard({ block }: { block: HotelBlock }) {
         {block.notes && (
           <div className="text-sm text-slate-400 mt-3 pt-3 border-t border-slate-700">
             {block.notes}
+          </div>
+        )}
+        
+        {/* Deep Links */}
+        {block.address && (
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-700">
+            <a
+              href={getGoogleMapsLink(block.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+              Maps
+            </a>
+            <a
+              href={getUberDeepLink(block.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M5 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
+                <path d="M5 17H3v-5l2-5h9l4 5v5h-2m-7-9 1.5 4.5H9L7.5 8Z" />
+              </svg>
+              Uber
+            </a>
+            {block.phone && (
+              <a
+                href={`tel:${block.phone}`}
+                className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                Call
+              </a>
+            )}
           </div>
         )}
       </div>
@@ -521,6 +726,57 @@ function WorkCard({ block }: { block: WorkBlock }) {
             {block.notes}
           </div>
         )}
+        
+        {/* Deep Links */}
+        {block.address && (
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-700">
+            <a
+              href={getGoogleMapsLink(block.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+              Maps
+            </a>
+            <a
+              href={getUberDeepLink(block.address)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M5 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
+                <path d="M5 17H3v-5l2-5h9l4 5v5h-2m-7-9 1.5 4.5H9L7.5 8Z" />
+              </svg>
+              Uber
+            </a>
+            {block.contactPhone && (
+              <a
+                href={`tel:${block.contactPhone}`}
+                className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+                </svg>
+                Call
+              </a>
+            )}
+            {block.contactEmail && (
+              <a
+                href={`mailto:${block.contactEmail}`}
+                className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <rect width="20" height="16" x="2" y="4" rx="2" /><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                </svg>
+                Email
+              </a>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -561,6 +817,50 @@ function TransportCard({ block }: { block: TransportBlock }) {
             {block.notes}
           </div>
         )}
+        
+        {/* Deep Links */}
+        <div className="flex flex-wrap gap-2 pt-3 border-t border-slate-700">
+          {block.pickupLocation && (
+            <a
+              href={getGoogleMapsLink(block.pickupLocation)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+              Pickup
+            </a>
+          )}
+          {block.dropoffLocation && (
+            <a
+              href={getGoogleMapsLink(block.dropoffLocation)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+              </svg>
+              Dropoff
+            </a>
+          )}
+          {block.pickupLocation && block.dropoffLocation && (
+            <a
+              href={getUberDeepLink(block.dropoffLocation)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 bg-slate-700/50 hover:bg-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-lg transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M5 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0Zm10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0Z" />
+                <path d="M5 17H3v-5l2-5h9l4 5v5h-2m-7-9 1.5 4.5H9L7.5 8Z" />
+              </svg>
+              Uber
+            </a>
+          )}
+        </div>
       </div>
     </div>
   )

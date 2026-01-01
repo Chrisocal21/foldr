@@ -770,6 +770,10 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
   const [todos, setTodos] = useState<any[]>([]);
   const [newTodo, setNewTodo] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [dueDate, setDueDate] = useState('');
+  const [priority, setPriority] = useState<'high' | 'medium' | 'low' | ''>('');
+  const [draggedTodo, setDraggedTodo] = useState<string | null>(null);
 
   const toggleFullscreen = () => {
     const newValue = !isFullscreen;
@@ -785,11 +789,6 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
     setTodos(getTodos().filter((t: any) => t.tripIds.includes(tripId)));
   }, [tripId]);
 
-  const handleToggle = (todoId: string) => {
-    toggleTodo(todoId);
-    loadTodos();
-  };
-
   const handleDelete = (todoId: string) => {
     deleteTodo(todoId);
     loadTodos();
@@ -802,27 +801,127 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
       id: crypto.randomUUID(),
       text: newTodo.trim(),
       completed: false,
+      status: 'todo',
       tripIds: [tripId],
+      dueDate: dueDate || undefined,
+      priority: priority || undefined,
       createdAt: now,
       updatedAt: now,
     };
     saveTodo(todo);
     setNewTodo('');
+    setDueDate('');
+    setPriority('');
+    setShowAdvanced(false);
     loadTodos();
   };
 
-  const incompleteTodos = todos.filter((t: any) => !t.completed);
-  const completedTodos = todos.filter((t: any) => t.completed);
+  // Kanban helpers
+  const moveToColumn = (todoId: string, newStatus: 'todo' | 'in-progress' | 'done') => {
+    const todo = todos.find((t: any) => t.id === todoId);
+    if (!todo) return;
+    const updatedTodo = {
+      ...todo,
+      status: newStatus,
+      completed: newStatus === 'done',
+      updatedAt: new Date().toISOString(),
+    };
+    saveTodo(updatedTodo);
+    loadTodos();
+  };
+
+  const handleDragStart = (todoId: string) => setDraggedTodo(todoId);
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+  const handleDrop = (e: React.DragEvent, status: 'todo' | 'in-progress' | 'done') => {
+    e.preventDefault();
+    if (draggedTodo) {
+      moveToColumn(draggedTodo, status);
+      setDraggedTodo(null);
+    }
+  };
+
+  const formatDueDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    if (date.getTime() === today.getTime()) return 'Today';
+    if (date.getTime() === tomorrow.getTime()) return 'Tmrw';
+    if (date < today) return 'Late';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getDueDateColor = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (date < today) return 'text-red-400 bg-red-500/20';
+    if (date.getTime() === today.getTime()) return 'text-orange-400 bg-orange-500/20';
+    return 'text-zinc-400 bg-zinc-700';
+  };
+
+  const getPriorityColor = (p: string) => {
+    switch (p) {
+      case 'high': return 'border-l-red-500';
+      case 'medium': return 'border-l-yellow-500';
+      case 'low': return 'border-l-green-500';
+      default: return 'border-l-zinc-600';
+    }
+  };
+
+  const getPriorityDot = (p: string) => {
+    switch (p) {
+      case 'high': return 'bg-red-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'low': return 'bg-green-500';
+      default: return '';
+    }
+  };
+
+  // Group todos by status
+  const todosByStatus: Record<string, any[]> = { 'todo': [], 'in-progress': [], 'done': [] };
+  todos.forEach((todo: any) => {
+    const status = todo.status || (todo.completed ? 'done' : 'todo');
+    todosByStatus[status].push(todo);
+  });
+
+  // Sort by priority then due date
+  const sortTodos = (arr: any[]) => arr.sort((a, b) => {
+    const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
+    const aPriority = a.priority ? priorityOrder[a.priority] : 3;
+    const bPriority = b.priority ? priorityOrder[b.priority] : 3;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return 0;
+  });
+
+  Object.keys(todosByStatus).forEach(key => {
+    todosByStatus[key] = sortTodos(todosByStatus[key]);
+  });
+
+  const todoCount = todosByStatus['todo'].length + todosByStatus['in-progress'].length;
+
+  const columns: { key: string; label: string; icon: string; color: string }[] = [
+    { key: 'todo', label: 'To Do', icon: '○', color: 'text-zinc-400' },
+    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-blue-400' },
+    { key: 'done', label: 'Done', icon: '●', color: 'text-green-400' },
+  ];
 
   return (
     <div className={`bg-zinc-900 border border-zinc-700 shadow-2xl flex flex-col overflow-hidden transition-all duration-200 ${
       isFullscreen 
         ? 'fixed top-20 bottom-4 left-4 right-4 z-[60] rounded-2xl' 
-        : 'w-80 max-h-[calc(100vh-26rem)] rounded-xl'
+        : 'w-[500px] max-h-[calc(100vh-20rem)] rounded-xl'
     }`}>
       <div className="flex items-center justify-between px-4 py-3 bg-zinc-800 border-b border-zinc-700">
         <h3 className="font-semibold text-white flex items-center gap-2">
-          <span className="text-blue-400">✓</span> To-Do
+          <span className="text-blue-400">☰</span> Task Board
+          {todoCount > 0 && <span className="text-xs bg-blue-600 px-2 py-0.5 rounded-full">{todoCount} active</span>}
         </h3>
         <div className="flex items-center gap-2">
           <button 
@@ -848,6 +947,7 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
         </div>
       </div>
 
+      {/* Add Todo Section */}
       <div className="p-3 border-b border-zinc-700">
         <div className="flex gap-2">
           <input
@@ -859,6 +959,16 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
             className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500"
           />
           <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={`px-3 py-2 rounded-lg border transition-colors ${(dueDate || priority) ? 'bg-purple-600 border-purple-500 text-white' : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:text-white'}`}
+            title="Due date & Priority"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+            </svg>
+          </button>
+          <button
             onClick={handleAdd}
             disabled={!newTodo.trim()}
             className="bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-2 rounded-lg transition-colors"
@@ -868,57 +978,111 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
             </svg>
           </button>
         </div>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
-        {todos.length === 0 ? (
-          <div className="text-center py-8 text-zinc-500">
-            <p className="text-sm">No tasks yet</p>
-          </div>
-        ) : (
-          <>
-            {incompleteTodos.map((todo: any) => (
-              <div key={todo.id} className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2 border border-zinc-700">
-                <button onClick={() => handleToggle(todo.id)} className="text-zinc-400 hover:text-green-400 shrink-0">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                  </svg>
-                </button>
-                <span className="flex-1 text-white text-sm">{todo.text}</span>
-                <button onClick={() => handleDelete(todo.id)} className="text-zinc-500 hover:text-red-400 shrink-0">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+        
+        {/* Advanced Options */}
+        {showAdvanced && (
+          <div className="flex flex-wrap gap-2 mt-2 p-2 bg-zinc-800 rounded-lg border border-zinc-700">
+            <div className="w-full flex gap-2">
+              <div className="flex-1">
+                <label className="text-zinc-500 text-xs block mb-1">Due Date</label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                />
               </div>
-            ))}
-            {completedTodos.length > 0 && (
-              <>
-                <div className="text-xs text-zinc-500 uppercase tracking-wide pt-2">Completed</div>
-                {completedTodos.map((todo: any) => (
-                  <div key={todo.id} className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-3 py-2 border border-zinc-700/50 opacity-60">
-                    <button onClick={() => handleToggle(todo.id)} className="text-green-400 shrink-0">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path d="M9 12l2 2 4-4" />
-                        <circle cx="12" cy="12" r="10" />
-                      </svg>
-                    </button>
-                    <span className="flex-1 text-zinc-400 text-sm line-through">{todo.text}</span>
-                    <button onClick={() => handleDelete(todo.id)} className="text-zinc-500 hover:text-red-400 shrink-0">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                        <path d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
-              </>
-            )}
-          </>
+              <div className="flex-1">
+                <label className="text-zinc-500 text-xs block mb-1">Priority</label>
+                <select
+                  value={priority}
+                  onChange={(e) => setPriority(e.target.value as any)}
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">None</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      <div className="px-4 py-2 bg-zinc-800 border-t border-zinc-700 text-xs text-zinc-500 truncate">
-        {tripName}
+      {/* Kanban Columns */}
+      <div className="flex-1 overflow-x-auto p-3">
+        <div className="flex gap-3 min-h-[200px] h-full">
+          {columns.map(col => (
+            <div
+              key={col.key}
+              className="flex-1 min-w-[130px] flex flex-col"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, col.key as any)}
+            >
+              {/* Column Header */}
+              <div className="flex items-center gap-2 mb-2 pb-2 border-b border-zinc-700">
+                <span className={col.color}>{col.icon}</span>
+                <span className="text-xs font-medium text-zinc-300">{col.label}</span>
+                <span className="text-xs text-zinc-500">({todosByStatus[col.key].length})</span>
+              </div>
+
+              {/* Column Content */}
+              <div className={`flex-1 space-y-2 overflow-y-auto min-h-[120px] p-1 rounded-lg transition-colors ${
+                draggedTodo ? 'bg-zinc-800/50 border border-dashed border-zinc-600' : ''
+              }`}>
+                {todosByStatus[col.key].length === 0 ? (
+                  <div className="text-center py-4 text-zinc-600 text-xs">
+                    {col.key === 'todo' ? 'No tasks' : col.key === 'in-progress' ? 'Drag here' : 'Completed'}
+                  </div>
+                ) : (
+                  todosByStatus[col.key].map((todo: any) => (
+                    <div
+                      key={todo.id}
+                      draggable
+                      onDragStart={() => handleDragStart(todo.id)}
+                      className={`group bg-zinc-800 rounded-lg p-2 border-l-2 cursor-grab active:cursor-grabbing transition-all hover:bg-zinc-750 ${
+                        getPriorityColor(todo.priority)
+                      } ${draggedTodo === todo.id ? 'opacity-50' : ''}`}
+                    >
+                      <div className="flex items-start gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-xs leading-tight ${todo.status === 'done' ? 'text-zinc-500 line-through' : 'text-white'}`}>
+                            {todo.text}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            {todo.priority && (
+                              <span className={`w-1.5 h-1.5 rounded-full ${getPriorityDot(todo.priority)}`} />
+                            )}
+                            {todo.dueDate && (
+                              <span className={`text-[10px] px-1 rounded ${getDueDateColor(todo.dueDate)}`}>
+                                {formatDueDate(todo.dueDate)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleDelete(todo.id)}
+                          className="text-zinc-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                            <path d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2 bg-zinc-800 border-t border-zinc-700 text-xs text-zinc-500 flex justify-between">
+        <span>Drag tasks between columns</span>
+        <span>{tripName}</span>
       </div>
     </div>
   );

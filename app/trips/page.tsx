@@ -12,14 +12,15 @@ export default function TripsPage() {
   const { settings } = useSettings()
   const [trips, setTrips] = useState<Trip[]>([])
   const [filter, setFilter] = useState<'all' | 'upcoming' | 'active' | 'past'>('all')
-  const [hidePast, setHidePast] = useState(false)
+  const [hidePast, setHidePast] = useState(true) // Default to hiding past trips
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; trip: Trip | null }>({ show: false, trip: null })
 
   useEffect(() => {
     loadTrips()
-    // Load hidePast preference
+    // Load hidePast preference (defaults to true if not set)
     const saved = localStorage.getItem('foldr_hide_past')
-    if (saved) setHidePast(saved === 'true')
+    if (saved !== null) setHidePast(saved === 'true')
+    // If no preference saved, it stays true (default)
     
     // Setup auto-sync if logged in
     if (isLoggedIn()) {
