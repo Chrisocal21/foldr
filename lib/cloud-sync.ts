@@ -261,14 +261,14 @@ function mergeArraysById<T extends { id: string; updatedAt?: string; createdAt?:
   return Array.from(merged.values())
 }
 
-// Pull data from cloud and MERGE with local (not overwrite)
-// Cloud is the source of truth for what items exist
+// Pull data from cloud - CLOUD IS THE SOURCE OF TRUTH
+// This completely replaces local data with cloud data
 export async function syncFromCloud(): Promise<SyncResult & { changes?: { added: number, removed: number } }> {
   const token = getAuthToken()
   if (!token) return { success: false, error: 'Not logged in' }
   
   try {
-    console.log('[Sync] Pulling from cloud...')
+    console.log('[Sync] Pulling from cloud - CLOUD IS SOURCE OF TRUTH')
     const response = await fetch(`${API_BASE}/sync/pull`, {
       method: 'GET',
       headers: {
@@ -279,22 +279,9 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
     const data = await response.json()
     
     if (data.success) {
-      // Get last sync time to determine if local-only items are new or deleted elsewhere
-      const lastSyncTime = localStorage.getItem('foldr_last_sync')
-      
-      // Get locally deleted items to exclude from merge
-      const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
-      const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : { trips: [], blocks: [], todos: [], packingItems: [], expenses: [] }
-      
-      // Get current local data for comparison
+      // Get current local data for comparison (just for logging)
       const localTrips = JSON.parse(localStorage.getItem('foldr_trips') || '[]')
       const localBlocks = JSON.parse(localStorage.getItem('foldr_blocks') || '[]')
-      const localTodos = JSON.parse(localStorage.getItem('foldr_todos') || '[]')
-      const localPackingItems = JSON.parse(localStorage.getItem('foldr_packing_items') || '[]')
-      const localExpenses = JSON.parse(localStorage.getItem('foldr_expenses') || '[]')
-      
-      const localTripIds = new Set(localTrips.map((t: any) => t.id))
-      const localBlockIds = new Set(localBlocks.map((b: any) => b.id))
       
       // Get cloud data
       const cloudTrips = data.trips ? JSON.parse(data.trips) : []
@@ -303,43 +290,34 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
       const cloudPackingItems = data.packingItems ? JSON.parse(data.packingItems) : []
       const cloudExpenses = data.expenses ? JSON.parse(data.expenses) : []
       
-      const cloudTripIds = new Set(cloudTrips.map((t: any) => t.id))
-      const cloudBlockIds = new Set(cloudBlocks.map((b: any) => b.id))
-      
       console.log('[Sync] Cloud data received:', {
         trips: cloudTrips.length,
         blocks: cloudBlocks.length,
         todos: cloudTodos.length
       })
-      console.log('[Sync] Local data:', {
+      console.log('[Sync] Local data (will be replaced):', {
         trips: localTrips.length,
-        blocks: localBlocks.length,
-        todos: localTodos.length
+        blocks: localBlocks.length
       })
       
-      // Merge with lastSyncTime to properly handle deletions from other devices
-      const mergedTrips = mergeArraysById(localTrips, cloudTrips, new Set(deletedItems.trips), lastSyncTime)
-      const mergedBlocks = mergeArraysById(localBlocks, cloudBlocks, new Set(deletedItems.blocks), lastSyncTime)
-      const mergedTodos = mergeArraysById(localTodos, cloudTodos, new Set(deletedItems.todos), lastSyncTime)
-      const mergedPackingItems = mergeArraysById(localPackingItems, cloudPackingItems, new Set(deletedItems.packingItems), lastSyncTime)
-      const mergedExpenses = mergeArraysById(localExpenses, cloudExpenses, new Set(deletedItems.expenses), lastSyncTime)
+      // Calculate changes for logging
+      const localTripIds = new Set(localTrips.map((t: any) => t.id))
+      const cloudTripIds = new Set(cloudTrips.map((t: any) => t.id))
+      const addedCount = cloudTrips.filter((t: any) => !localTripIds.has(t.id)).length
+      const removedCount = localTrips.filter((t: any) => !cloudTripIds.has(t.id)).length
       
-      // Calculate changes
-      const addedCount = 
-        cloudTrips.filter((t: any) => !localTripIds.has(t.id)).length +
-        cloudBlocks.filter((b: any) => !localBlockIds.has(b.id)).length
+      // REPLACE local data with cloud data - NO MERGE
+      // Cloud is the single source of truth
+      localStorage.setItem('foldr_trips', JSON.stringify(cloudTrips))
+      localStorage.setItem('foldr_blocks', JSON.stringify(cloudBlocks))
+      localStorage.setItem('foldr_todos', JSON.stringify(cloudTodos))
+      localStorage.setItem('foldr_packing_items', JSON.stringify(cloudPackingItems))
+      localStorage.setItem('foldr_expenses', JSON.stringify(cloudExpenses))
       
-      const removedCount = 
-        localTrips.filter((t: any) => !cloudTripIds.has(t.id) && !deletedItems.trips?.includes(t.id)).length +
-        localBlocks.filter((b: any) => !cloudBlockIds.has(b.id) && !deletedItems.blocks?.includes(b.id)).length
+      // Clear any pending deletions since cloud is now source of truth
+      localStorage.removeItem('foldr_deleted_items')
       
-      localStorage.setItem('foldr_trips', JSON.stringify(mergedTrips))
-      localStorage.setItem('foldr_blocks', JSON.stringify(mergedBlocks))
-      localStorage.setItem('foldr_todos', JSON.stringify(mergedTodos))
-      localStorage.setItem('foldr_packing_items', JSON.stringify(mergedPackingItems))
-      localStorage.setItem('foldr_expenses', JSON.stringify(mergedExpenses))
-      
-      // Settings: cloud wins for settings (single object, not array)
+      // Settings: cloud wins for settings
       if (data.settings) localStorage.setItem('foldr_settings', data.settings)
       
       localStorage.setItem('foldr_last_sync', new Date().toISOString())
@@ -356,10 +334,10 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
         success: true
       })
       
-      console.log('[Sync] Merged result:', {
-        trips: mergedTrips.length,
-        blocks: mergedBlocks.length,
-        todos: mergedTodos.length,
+      console.log('[Sync] Local replaced with cloud:', {
+        trips: cloudTrips.length,
+        blocks: cloudBlocks.length,
+        todos: cloudTodos.length,
         added: addedCount,
         removed: removedCount
       })
@@ -388,17 +366,24 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
   }
 }
 
-// Full sync: pull from cloud, then push any local changes
+// Full sync: PUSH local changes first, then PULL cloud (which becomes source of truth)
 export async function fullSync(): Promise<SyncResult> {
-  // First pull to get latest cloud data
-  const pullResult = await syncFromCloud()
-  if (!pullResult.success && pullResult.error !== 'Network error - working offline') {
-    return pullResult
+  console.log('[Sync] Starting full sync...')
+  
+  // First PUSH local changes to cloud (including deletions)
+  // This ensures any local edits/deletions are saved to cloud
+  const pushResult = await syncToCloud()
+  if (!pushResult.success && pushResult.error !== 'Network error - will sync when online') {
+    console.log('[Sync] Push failed:', pushResult.error)
+    // Continue to pull anyway - cloud is source of truth
   }
   
-  // Then push local data
-  const pushResult = await syncToCloud()
-  return pushResult
+  // Then PULL cloud data - this REPLACES local completely
+  // Cloud is the single source of truth
+  const pullResult = await syncFromCloud()
+  
+  console.log('[Sync] Full sync complete')
+  return pullResult
 }
 
 // Auto-sync when online
@@ -412,12 +397,14 @@ export function setupAutoSync() {
     }
   })
   
-  // Sync periodically (every 5 minutes)
+  // Full sync periodically (every 1 minute) to keep devices in sync
+  // This pushes local changes AND pulls cloud data
   setInterval(() => {
     if (isLoggedIn() && navigator.onLine) {
-      syncToCloud()
+      console.log('[Sync] Auto-sync triggered (1 min interval)')
+      fullSync()
     }
-  }, 5 * 60 * 1000)
+  }, 60 * 1000) // 1 minute
 }
 
 // Get last sync time
