@@ -120,7 +120,69 @@ function addSyncLogEntry(entry: SyncLogEntry): void {
   localStorage.setItem(SYNC_LOG_KEY, JSON.stringify(log))
 }
 
-// Sync all local data to cloud
+// Push ONLY deletions to cloud (without sending full local data)
+// This is used during fullSync to ensure deletions are processed without
+// re-adding stale data from other devices
+async function pushDeletionsOnly(): Promise<SyncResult> {
+  const token = getAuthToken()
+  if (!token) return { success: false, error: 'Not logged in' }
+  
+  try {
+    const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
+    const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : null
+    
+    if (!deletedItems) {
+      return { success: true } // Nothing to delete
+    }
+    
+    const deletionCount = 
+      (deletedItems.trips?.length || 0) + 
+      (deletedItems.blocks?.length || 0) + 
+      (deletedItems.todos?.length || 0) + 
+      (deletedItems.packingItems?.length || 0) + 
+      (deletedItems.expenses?.length || 0)
+    
+    if (deletionCount === 0) {
+      return { success: true } // Nothing to delete
+    }
+    
+    console.log('[Sync] Pushing deletions only:', deletedItems)
+    
+    // Send ONLY deletions - no trips/blocks data
+    // This ensures we don't re-add items that were deleted elsewhere
+    const response = await fetch(`${API_BASE}/sync/push`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        deletedItems: deletedItems
+        // NOT sending trips, blocks, etc. - just deletions
+      })
+    })
+    
+    const data = await response.json()
+    
+    if (data.success) {
+      localStorage.removeItem('foldr_deleted_items')
+      addSyncLogEntry({
+        timestamp: new Date().toISOString(),
+        action: 'push',
+        changes: { added: 0, updated: 0, deleted: deletionCount },
+        success: true
+      })
+      return { success: true }
+    }
+    
+    return { success: false, error: data.error || 'Sync failed' }
+  } catch (error) {
+    return { success: false, error: 'Network error' }
+  }
+}
+
+// Sync all local data to cloud (full push)
+// Only call this when user makes a LOCAL change that needs to sync
 export async function syncToCloud(): Promise<SyncResult> {
   const token = getAuthToken()
   if (!token) return { success: false, error: 'Not logged in' }
@@ -366,19 +428,32 @@ export async function syncFromCloud(): Promise<SyncResult & { changes?: { added:
   }
 }
 
-// Full sync: PUSH local changes first, then PULL cloud (which becomes source of truth)
+// Full sync: PULL cloud first (source of truth), then push ONLY pending deletions
 export async function fullSync(): Promise<SyncResult> {
   console.log('[Sync] Starting full sync...')
   
-  // First PUSH local changes to cloud (including deletions)
-  // This ensures any local edits/deletions are saved to cloud
-  const pushResult = await syncToCloud()
-  if (!pushResult.success && pushResult.error !== 'Network error - will sync when online') {
-    console.log('[Sync] Push failed:', pushResult.error)
-    // Continue to pull anyway - cloud is source of truth
+  // Check if we have pending deletions that need to be pushed
+  const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
+  const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : null
+  const hasPendingDeletions = deletedItems && (
+    (deletedItems.trips?.length || 0) +
+    (deletedItems.blocks?.length || 0) +
+    (deletedItems.todos?.length || 0) +
+    (deletedItems.packingItems?.length || 0) +
+    (deletedItems.expenses?.length || 0)
+  ) > 0
+  
+  // If we have pending deletions, push them FIRST before pulling
+  // Use deletions-only push to avoid re-adding stale data
+  if (hasPendingDeletions) {
+    console.log('[Sync] Pushing pending deletions first...')
+    const pushResult = await pushDeletionsOnly()
+    if (!pushResult.success) {
+      console.log('[Sync] Push deletions failed:', pushResult.error)
+    }
   }
   
-  // Then PULL cloud data - this REPLACES local completely
+  // PULL cloud data - this REPLACES local completely
   // Cloud is the single source of truth
   const pullResult = await syncFromCloud()
   
@@ -398,11 +473,11 @@ export function setupAutoSync() {
   })
   
   // Full sync periodically (every 1 minute) to keep devices in sync
-  // This pushes local changes AND pulls cloud data
+  // Only pulls from cloud - pushes happen via triggerSync when user makes changes
   setInterval(() => {
     if (isLoggedIn() && navigator.onLine) {
       console.log('[Sync] Auto-sync triggered (1 min interval)')
-      fullSync()
+      syncFromCloud() // Just pull, don't push stale data
     }
   }, 60 * 1000) // 1 minute
 }
