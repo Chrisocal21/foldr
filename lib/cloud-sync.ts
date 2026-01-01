@@ -132,44 +132,59 @@ export async function syncToCloud(): Promise<SyncResult> {
   }
 }
 
-// Helper to merge arrays by ID, using updatedAt timestamp to resolve conflicts
-// Also excludes any IDs that are in the deletedIds set
-function mergeArraysById<T extends { id: string; updatedAt?: string }>(
+// Helper to merge arrays by ID
+// Cloud is the source of truth for WHAT EXISTS
+// Local items not in cloud are kept ONLY if created after last sync (not yet pushed)
+// For items in both, use the one with newer updatedAt timestamp
+function mergeArraysById<T extends { id: string; updatedAt?: string; createdAt?: string }>(
   local: T[],
   cloud: T[],
-  deletedIds: Set<string> = new Set()
+  deletedIds: Set<string> = new Set(),
+  lastSyncTime: string | null = null
 ): T[] {
   const merged = new Map<string, T>()
+  const cloudIds = new Set(cloud.map(item => item.id))
+  const lastSync = lastSyncTime ? new Date(lastSyncTime).getTime() : 0
   
-  // Add all local items first (excluding deleted ones)
-  for (const item of local) {
-    if (!deletedIds.has(item.id)) {
-      merged.set(item.id, item)
+  // First, add all cloud items (this is the source of truth for what exists)
+  for (const cloudItem of cloud) {
+    if (!deletedIds.has(cloudItem.id)) {
+      merged.set(cloudItem.id, cloudItem)
     }
   }
   
-  // Merge cloud items - cloud wins if it has a newer updatedAt, or if local doesn't have the item
-  // But skip items that were explicitly deleted locally
-  for (const cloudItem of cloud) {
-    if (deletedIds.has(cloudItem.id)) {
-      // Item was deleted locally, don't add it back
+  // Then process local items
+  for (const localItem of local) {
+    if (deletedIds.has(localItem.id)) {
+      // Item was deleted locally, skip it
       continue
     }
     
-    const localItem = merged.get(cloudItem.id)
-    
-    if (!localItem) {
-      // Item only exists in cloud - add it
-      merged.set(cloudItem.id, cloudItem)
-    } else {
+    if (cloudIds.has(localItem.id)) {
       // Item exists in both - use the one with newer updatedAt
-      const localUpdated = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0
-      const cloudUpdated = cloudItem.updatedAt ? new Date(cloudItem.updatedAt).getTime() : 0
-      
-      if (cloudUpdated > localUpdated) {
-        merged.set(cloudItem.id, cloudItem)
+      const cloudItem = merged.get(localItem.id)
+      if (cloudItem) {
+        const localUpdated = localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0
+        const cloudUpdated = cloudItem.updatedAt ? new Date(cloudItem.updatedAt).getTime() : 0
+        
+        if (localUpdated > cloudUpdated) {
+          // Local is newer, use it
+          merged.set(localItem.id, localItem)
+        }
+        // Otherwise keep cloud item (already in merged)
       }
-      // Otherwise keep the local item (already in merged)
+    } else {
+      // Item only exists locally - keep it ONLY if it was created after last sync
+      // This means it's a new item that hasn't been pushed yet
+      const createdTime = localItem.createdAt 
+        ? new Date(localItem.createdAt).getTime() 
+        : (localItem.updatedAt ? new Date(localItem.updatedAt).getTime() : 0)
+      
+      if (createdTime > lastSync || lastSync === 0) {
+        // Item was created locally after last sync, keep it
+        merged.set(localItem.id, localItem)
+      }
+      // Otherwise, item was deleted on another device - don't add it back
     }
   }
   
@@ -177,6 +192,7 @@ function mergeArraysById<T extends { id: string; updatedAt?: string }>(
 }
 
 // Pull data from cloud and MERGE with local (not overwrite)
+// Cloud is the source of truth for what items exist
 export async function syncFromCloud(): Promise<SyncResult> {
   const token = getAuthToken()
   if (!token) return { success: false, error: 'Not logged in' }
@@ -192,12 +208,15 @@ export async function syncFromCloud(): Promise<SyncResult> {
     const data = await response.json()
     
     if (data.success) {
+      // Get last sync time to determine if local-only items are new or deleted elsewhere
+      const lastSyncTime = localStorage.getItem('foldr_last_sync')
+      
       // Get locally deleted items to exclude from merge
       const deletedItemsStr = localStorage.getItem('foldr_deleted_items')
       const deletedItems = deletedItemsStr ? JSON.parse(deletedItemsStr) : { trips: [], blocks: [], todos: [], packingItems: [], expenses: [] }
       
-      // MERGE cloud data with local (not overwrite!)
-      // Get local data
+      // MERGE cloud data with local
+      // Cloud is source of truth - items not in cloud are removed unless newly created locally
       const localTrips = JSON.parse(localStorage.getItem('foldr_trips') || '[]')
       const localBlocks = JSON.parse(localStorage.getItem('foldr_blocks') || '[]')
       const localTodos = JSON.parse(localStorage.getItem('foldr_todos') || '[]')
@@ -211,12 +230,12 @@ export async function syncFromCloud(): Promise<SyncResult> {
       const cloudPackingItems = data.packingItems ? JSON.parse(data.packingItems) : []
       const cloudExpenses = data.expenses ? JSON.parse(data.expenses) : []
       
-      // Merge and save (excluding locally deleted items)
-      const mergedTrips = mergeArraysById(localTrips, cloudTrips, new Set(deletedItems.trips))
-      const mergedBlocks = mergeArraysById(localBlocks, cloudBlocks, new Set(deletedItems.blocks))
-      const mergedTodos = mergeArraysById(localTodos, cloudTodos, new Set(deletedItems.todos))
-      const mergedPackingItems = mergeArraysById(localPackingItems, cloudPackingItems, new Set(deletedItems.packingItems))
-      const mergedExpenses = mergeArraysById(localExpenses, cloudExpenses, new Set(deletedItems.expenses))
+      // Merge with lastSyncTime to properly handle deletions from other devices
+      const mergedTrips = mergeArraysById(localTrips, cloudTrips, new Set(deletedItems.trips), lastSyncTime)
+      const mergedBlocks = mergeArraysById(localBlocks, cloudBlocks, new Set(deletedItems.blocks), lastSyncTime)
+      const mergedTodos = mergeArraysById(localTodos, cloudTodos, new Set(deletedItems.todos), lastSyncTime)
+      const mergedPackingItems = mergeArraysById(localPackingItems, cloudPackingItems, new Set(deletedItems.packingItems), lastSyncTime)
+      const mergedExpenses = mergeArraysById(localExpenses, cloudExpenses, new Set(deletedItems.expenses), lastSyncTime)
       
       localStorage.setItem('foldr_trips', JSON.stringify(mergedTrips))
       localStorage.setItem('foldr_blocks', JSON.stringify(mergedBlocks))
