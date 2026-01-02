@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSettings } from '@/lib/settings-context'
+import { FullscreenWeather } from './FullscreenWeather'
 
 interface WeatherDay {
   date: string
@@ -25,6 +26,7 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isOffline, setIsOffline] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   // Convert temperature based on user settings
   const formatTemp = (celsius: number): string => {
@@ -166,34 +168,55 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
   }
 
   return (
-    <div className={`bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 ${className}`}>
-      <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-        <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-        </svg>
-        {settings.weatherForecastDays}-Day Forecast
-        {destination && <span className="text-sm font-normal text-slate-400">• {destination.split(',')[0]}</span>}
-      </h3>
-      
-      <div className={`grid gap-2 ${
-        settings.weatherForecastDays === 3 ? 'grid-cols-3' : 
-        settings.weatherForecastDays === 7 ? 'grid-cols-7' : 'grid-cols-5'
-      }`}>
-        {forecast.map((day, index) => (
-          <div 
-            key={day.date} 
-            className={`text-center p-2 rounded-lg ${index === 0 ? 'bg-slate-500/20 border border-slate-500/30' : 'bg-slate-700/30'}`}
-          >
-            <div className="text-xs text-slate-400 mb-1">
-              {index === 0 ? 'Today' : formatDayName(day.date)}
+    <>
+      <div 
+        className={`bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors ${className}`}
+        onClick={() => setIsFullscreen(true)}
+      >
+        <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+          <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+          {settings.weatherForecastDays}-Day Forecast
+          {destination && <span className="text-sm font-normal text-slate-400">• {destination.split(',')[0]}</span>}
+          <svg className="w-4 h-4 text-slate-500 ml-auto" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+        </h3>
+        
+        <div className={`grid gap-2 ${
+          settings.weatherForecastDays === 3 ? 'grid-cols-3' : 
+          settings.weatherForecastDays === 7 ? 'grid-cols-7' : 'grid-cols-5'
+        }`}>
+          {forecast.map((day, index) => (
+            <div 
+              key={day.date} 
+              className={`text-center p-2 rounded-lg ${index === 0 ? 'bg-slate-500/20 border border-slate-500/30' : 'bg-slate-700/30'}`}
+            >
+              <div className="text-xs text-slate-400 mb-1">
+                {index === 0 ? 'Today' : formatDayName(day.date)}
+              </div>
+              <div className="text-2xl mb-1">{day.icon}</div>
+              <div className="text-sm font-semibold text-white">{formatTemp(day.tempMax)}</div>
+              <div className="text-xs text-slate-500">{formatTemp(day.tempMin)}</div>
             </div>
-            <div className="text-2xl mb-1">{day.icon}</div>
-            <div className="text-sm font-semibold text-white">{formatTemp(day.tempMax)}</div>
-            <div className="text-xs text-slate-500">{formatTemp(day.tempMin)}</div>
-          </div>
-        ))}
+          ))}
+        </div>
+        
+        <div className="text-center text-xs text-slate-500 mt-2">
+          Tap for detailed forecast
+        </div>
       </div>
-    </div>
+
+      {/* Fullscreen Weather Modal */}
+      <FullscreenWeather
+        isOpen={isFullscreen}
+        onClose={() => setIsFullscreen(false)}
+        latitude={latitude}
+        longitude={longitude}
+        destination={destination}
+      />
+    </>
   )
 }
 

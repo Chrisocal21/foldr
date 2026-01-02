@@ -1116,6 +1116,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   latitude={trip.latitude} 
                   longitude={trip.longitude} 
                   destination={trip.destination}
+                  blocks={blocks}
                   className="h-48 md:h-52"
                 />
               </div>

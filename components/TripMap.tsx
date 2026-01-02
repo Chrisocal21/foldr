@@ -4,19 +4,23 @@ import { useEffect, useRef, useState } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { useOnline } from '@/lib/offline'
 import { useSettings } from '@/lib/settings-context'
+import { FullscreenMap } from './FullscreenMap'
+import { Block } from '@/lib/types'
 
 interface TripMapProps {
   latitude: number
   longitude: number
   destination?: string
   className?: string
+  blocks?: Block[]
 }
 
-export function TripMap({ latitude, longitude, destination, className = '' }: TripMapProps) {
+export function TripMap({ latitude, longitude, destination, className = '', blocks = [] }: TripMapProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<L.Map | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const isOnline = useOnline()
   const { settings } = useSettings()
 
@@ -113,22 +117,48 @@ export function TripMap({ latitude, longitude, destination, className = '' }: Tr
   }
 
   return (
-    <div className={`rounded-xl overflow-hidden ${className}`} style={{ minHeight: '200px', height: '200px' }}>
+    <>
       <div 
-        ref={mapRef} 
-        style={{ height: '200px', width: '100%' }}
+        className={`rounded-xl overflow-hidden cursor-pointer relative group ${className}`} 
+        style={{ minHeight: '200px', height: '200px' }}
+        onClick={() => setIsFullscreen(true)}
       >
-        {!isLoaded && (
-          <div className="h-full w-full bg-slate-800 flex items-center justify-center text-slate-500">
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M12 2v4m0 12v4m-7-7H2m20 0h-3m-2.5-7.5L14 7m-4 10-2.5 2.5M17.5 17.5 15 15M6.5 6.5 9 9" />
-              </svg>
-              Loading map...
-            </div>
+        {/* Expand hint overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors z-10 flex items-center justify-center opacity-0 group-hover:opacity-100">
+          <div className="bg-black/70 text-white px-3 py-2 rounded-lg text-sm flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            </svg>
+            Tap to expand
           </div>
-        )}
+        </div>
+        
+        <div 
+          ref={mapRef} 
+          style={{ height: '200px', width: '100%' }}
+        >
+          {!isLoaded && (
+            <div className="h-full w-full bg-slate-800 flex items-center justify-center text-slate-500">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M12 2v4m0 12v4m-7-7H2m20 0h-3m-2.5-7.5L14 7m-4 10-2.5 2.5M17.5 17.5 15 15M6.5 6.5 9 9" />
+                </svg>
+                Loading map...
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Fullscreen Map Modal */}
+      <FullscreenMap
+        isOpen={isFullscreen}
+        onClose={() => setIsFullscreen(false)}
+        latitude={latitude}
+        longitude={longitude}
+        destination={destination}
+        blocks={blocks}
+      />
+    </>
   )
 }
