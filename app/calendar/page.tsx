@@ -61,10 +61,10 @@ export default function CalendarPage() {
       <div
         key={day}
         className={`h-24 sm:h-32 border border-slate-700 p-2 ${
-          isToday ? 'bg-blue-600/10 border-blue-500' : 'bg-slate-800'
+          isToday ? 'bg-white text-slate-900/10 border-slate-500' : 'bg-slate-800'
         }`}
       >
-        <div className={`text-sm font-medium mb-1 ${isToday ? 'text-blue-400' : 'text-slate-300'}`}>
+        <div className={`text-sm font-medium mb-1 ${isToday ? 'text-slate-400' : 'text-slate-300'}`}>
           {day}
         </div>
         <div className="space-y-1 overflow-y-auto h-16 sm:h-20">
@@ -72,7 +72,7 @@ export default function CalendarPage() {
             <Link
               key={trip.id}
               href={`/trips/${trip.id}`}
-              className="block text-xs p-1 rounded bg-blue-600/80 hover:bg-blue-600 text-white truncate"
+              className="block text-xs p-1 rounded bg-white/80 hover:bg-white text-white truncate"
               style={{ backgroundColor: trip.color || undefined }}
             >
               {trip.name}
@@ -89,7 +89,10 @@ export default function CalendarPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800">
         <div className="container mx-auto px-4 py-4">
@@ -152,11 +155,11 @@ export default function CalendarPage() {
         {/* Legend */}
         <div className="mt-6 flex items-center gap-6 text-sm text-slate-400">
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded bg-blue-600"></div>
+            <div className="w-3 h-3 rounded bg-white text-slate-900"></div>
             <span>Trip days</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded border-2 border-blue-500"></div>
+            <div className="w-3 h-3 rounded border-2 border-slate-500"></div>
             <span>Today</span>
           </div>
         </div>
@@ -164,3 +167,5 @@ export default function CalendarPage() {
     </div>
   )
 }
+
+

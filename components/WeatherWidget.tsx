@@ -156,7 +156,7 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
           <span>{error}</span>
           <button 
             onClick={fetchWeather}
-            className="ml-auto text-sm text-blue-400 hover:text-blue-300"
+            className="ml-auto text-sm text-slate-400 hover:text-slate-300"
           >
             Retry
           </button>
@@ -182,7 +182,7 @@ export function WeatherWidget({ latitude, longitude, destination, className = ''
         {forecast.map((day, index) => (
           <div 
             key={day.date} 
-            className={`text-center p-2 rounded-lg ${index === 0 ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-slate-700/30'}`}
+            className={`text-center p-2 rounded-lg ${index === 0 ? 'bg-slate-500/20 border border-slate-500/30' : 'bg-slate-700/30'}`}
           >
             <div className="text-xs text-slate-400 mb-1">
               {index === 0 ? 'Today' : formatDayName(day.date)}
@@ -252,3 +252,4 @@ function getWeatherIcon(code: number): string {
   if (code >= 95) return '⛈️'
   return '🌡️'
 }
+

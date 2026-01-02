@@ -74,7 +74,7 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
         {error && <div className="text-red-500 mb-4 text-center">{error}</div>}
         <button
           type="submit"
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded transition-colors"
+          className="w-full bg-white hover:bg-slate-100 text-white font-semibold py-2 rounded transition-colors"
         >
           Log In
         </button>
@@ -82,3 +82,4 @@ export default function LoginPage({ onLogin }: { onLogin: () => void }) {
     </div>
   );
 }
+

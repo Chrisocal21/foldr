@@ -5,7 +5,10 @@ import FloatingMenu from '@/components/FloatingMenu'
 
 export default function RoadmapPage() {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
@@ -175,3 +178,4 @@ function CompletedItem({ text }: { text: string }) {
 }
 
 // Dev Notes component is rendered at end of RoadmapPage
+

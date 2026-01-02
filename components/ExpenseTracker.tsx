@@ -112,7 +112,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
           </h3>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            className="text-xs px-3 py-1.5 bg-white hover:bg-slate-100 text-white rounded-lg transition-colors"
           >
             + Add
           </button>
@@ -142,7 +142,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
               value={newExpense.description}
               onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
               placeholder="Description..."
-              className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
               autoFocus
             />
           </div>
@@ -151,7 +151,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
               <select
                 value={newExpense.currency}
                 onChange={(e) => setNewExpense({ ...newExpense, currency: e.target.value })}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 {CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
@@ -164,7 +164,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
                 value={newExpense.amount}
                 onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
                 placeholder="0.00"
-                className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
               />
             </div>
           </div>
@@ -172,7 +172,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
             <select
               value={newExpense.category}
               onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value as ExpenseCategory })}
-              className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
             >
               {EXPENSE_CATEGORIES.map((c) => (
                 <option key={c.value} value={c.value}>{c.icon} {c.label}</option>
@@ -182,7 +182,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
               type="date"
               value={newExpense.date}
               onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
             />
           </div>
           <div className="flex gap-2">
@@ -195,7 +195,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+              className="flex-1 px-4 py-2 bg-white hover:bg-slate-100 text-white rounded-lg text-sm transition-colors"
             >
               Add Expense
             </button>
@@ -296,3 +296,4 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
     </div>
   )
 }
+

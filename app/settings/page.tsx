@@ -134,7 +134,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800">
         <div className="container mx-auto px-4 py-4">
@@ -220,7 +223,7 @@ export default function SettingsPage() {
                       <button
                         onClick={handleSync}
                         disabled={syncing}
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white rounded-lg transition-colors flex items-center gap-2"
+                        className="px-4 py-2 bg-white hover:bg-slate-100 disabled:bg-slate-400/50 text-white rounded-lg transition-colors flex items-center gap-2"
                       >
                         <svg className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                           <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" />
@@ -328,7 +331,7 @@ export default function SettingsPage() {
                           value={currentPassword}
                           onChange={(e) => setCurrentPassword(e.target.value)}
                           placeholder="Current password"
-                          className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50"
                         />
                         <button
                           type="button"
@@ -353,7 +356,7 @@ export default function SettingsPage() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="New password"
-                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50"
                       />
                       
                       <input
@@ -361,13 +364,13 @@ export default function SettingsPage() {
                         value={confirmNewPassword}
                         onChange={(e) => setConfirmNewPassword(e.target.value)}
                         placeholder="Confirm new password"
-                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50"
                       />
                       
                       <button
                         onClick={handleChangePassword}
                         disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
-                        className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
+                        className="w-full px-4 py-2.5 bg-white hover:bg-slate-100 disabled:bg-slate-600 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
                       >
                         {changingPassword ? 'Changing...' : 'Update Password'}
                       </button>
@@ -385,7 +388,7 @@ export default function SettingsPage() {
                   </div>
                   <Link
                     href="/"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                    className="px-4 py-2 bg-white hover:bg-slate-100 text-white rounded-lg transition-colors"
                   >
                     Sign In
                   </Link>
@@ -398,7 +401,7 @@ export default function SettingsPage() {
         {/* Units Section */}
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z" />
             </svg>
             Units & Format
@@ -414,7 +417,7 @@ export default function SettingsPage() {
               <select
                 value={settings.temperatureUnit}
                 onChange={(e) => handleChange('temperatureUnit', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="fahrenheit">°F Fahrenheit</option>
                 <option value="celsius">°C Celsius</option>
@@ -430,7 +433,7 @@ export default function SettingsPage() {
               <select
                 value={settings.distanceUnit}
                 onChange={(e) => handleChange('distanceUnit', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="miles">Miles</option>
                 <option value="kilometers">Kilometers</option>
@@ -446,7 +449,7 @@ export default function SettingsPage() {
               <select
                 value={settings.dateFormat}
                 onChange={(e) => handleChange('dateFormat', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="mdy">Dec 25, 2025</option>
                 <option value="dmy">25 Dec 2025</option>
@@ -463,7 +466,7 @@ export default function SettingsPage() {
               <select
                 value={settings.timeFormat}
                 onChange={(e) => handleChange('timeFormat', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="12h">12-hour (2:30 PM)</option>
                 <option value="24h">24-hour (14:30)</option>
@@ -479,7 +482,7 @@ export default function SettingsPage() {
               <select
                 value={settings.defaultCurrency}
                 onChange={(e) => handleChange('defaultCurrency', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 {SUPPORTED_CURRENCIES.map(c => (
                   <option key={c.code} value={c.code}>{c.symbol} {c.code}</option>
@@ -509,7 +512,7 @@ export default function SettingsPage() {
               <select
                 value={settings.firstDayOfWeek}
                 onChange={(e) => handleChange('firstDayOfWeek', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="sunday">Sunday</option>
                 <option value="monday">Monday</option>
@@ -525,7 +528,7 @@ export default function SettingsPage() {
               <select
                 value={settings.weatherForecastDays}
                 onChange={(e) => handleChange('weatherForecastDays', parseInt(e.target.value))}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value={3}>3 days</option>
                 <option value={5}>5 days</option>
@@ -542,7 +545,7 @@ export default function SettingsPage() {
               <select
                 value={settings.mapDefaultZoom}
                 onChange={(e) => handleChange('mapDefaultZoom', parseInt(e.target.value))}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value={10}>City view</option>
                 <option value={12}>Neighborhood</option>
@@ -560,7 +563,7 @@ export default function SettingsPage() {
               <select
                 value={settings.tripSortOrder}
                 onChange={(e) => handleChange('tripSortOrder', e.target.value)}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value="date">By date</option>
                 <option value="name">By name</option>
@@ -576,7 +579,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => handleChange('showTripCountdown', !settings.showTripCountdown)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${settings.showTripCountdown ? 'bg-blue-600' : 'bg-slate-600'}`}
+                className={`relative w-12 h-6 rounded-full transition-colors ${settings.showTripCountdown ? 'bg-white text-slate-900' : 'bg-slate-600'}`}
               >
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.showTripCountdown ? 'left-7' : 'left-1'}`} />
               </button>
@@ -590,7 +593,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={() => handleChange('compactMode', !settings.compactMode)}
-                className={`relative w-12 h-6 rounded-full transition-colors ${settings.compactMode ? 'bg-blue-600' : 'bg-slate-600'}`}
+                className={`relative w-12 h-6 rounded-full transition-colors ${settings.compactMode ? 'bg-white text-slate-900' : 'bg-slate-600'}`}
               >
                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.compactMode ? 'left-7' : 'left-1'}`} />
               </button>
@@ -617,7 +620,7 @@ export default function SettingsPage() {
               <select
                 value={settings.defaultTripDuration}
                 onChange={(e) => handleChange('defaultTripDuration', parseInt(e.target.value))}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value={3}>3 days</option>
                 <option value={5}>5 days</option>
@@ -636,7 +639,7 @@ export default function SettingsPage() {
               <select
                 value={settings.autoArchiveDays}
                 onChange={(e) => handleChange('autoArchiveDays', parseInt(e.target.value))}
-                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               >
                 <option value={0}>Never</option>
                 <option value={7}>After 1 week</option>
@@ -712,7 +715,7 @@ export default function SettingsPage() {
               </div>
               <button
                 onClick={exportData}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2"
+                className="px-4 py-2 bg-white hover:bg-slate-100 text-white rounded-lg transition-colors flex items-center gap-2"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
@@ -777,8 +780,8 @@ export default function SettingsPage() {
             {/* Statistics */}
             <Link href="/stats" className="p-4 flex items-center justify-between hover:bg-slate-700/50 transition-colors">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <div className="w-10 h-10 bg-slate-500/20 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                   </svg>
                 </div>
@@ -880,3 +883,5 @@ export default function SettingsPage() {
     </div>
   )
 }
+
+

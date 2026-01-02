@@ -27,14 +27,17 @@ export default function EditBlockPage({ params }: { params: Promise<{ id: string
 
   if (isLoading || !block) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
         <div className="text-white">Loading...</div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
       <header className="bg-slate-900 border-b border-slate-800">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
@@ -103,7 +106,7 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
           options={AIRLINES}
           placeholder="Airline *"
           required
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="text"
@@ -111,7 +114,7 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
           placeholder="Flight Number *"
           value={formData.flightNumber}
           onChange={(e) => setFormData({ ...formData, flightNumber: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -120,7 +123,7 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
         required
         value={formData.date}
         onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -130,14 +133,14 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
           options={AIRPORTS}
           placeholder="Departure Airport *"
           required
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="time"
           required
           value={formData.departureTime}
           onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -148,14 +151,14 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
           options={AIRPORTS}
           placeholder="Arrival Airport *"
           required
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="time"
           required
           value={formData.arrivalTime}
           onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -165,14 +168,14 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
           placeholder="Confirmation Number"
           value={formData.confirmationNumber}
           onChange={(e) => setFormData({ ...formData, confirmationNumber: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="text"
           placeholder="Seat"
           value={formData.seat}
           onChange={(e) => setFormData({ ...formData, seat: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -182,14 +185,14 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
           onChange={(value) => setFormData({ ...formData, terminal: value })}
           options={TERMINALS}
           placeholder="Terminal"
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="text"
           placeholder="Gate"
           value={formData.gate}
           onChange={(e) => setFormData({ ...formData, gate: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -198,12 +201,12 @@ function EditFlightForm({ block, tripId }: { block: FlightBlock; tripId: string 
         value={formData.notes}
         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         rows={3}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>
@@ -240,7 +243,7 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
         options={HOTEL_CHAINS}
         placeholder="Hotel Name *"
         required
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -249,7 +252,7 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
         placeholder="Address *"
         value={formData.address}
         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -258,7 +261,7 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
         placeholder="Phone *"
         value={formData.phone}
         onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -267,13 +270,13 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
           required
           value={formData.checkInDate}
           onChange={(e) => setFormData({ ...formData, checkInDate: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="time"
           value={formData.checkInTime}
           onChange={(e) => setFormData({ ...formData, checkInTime: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -283,13 +286,13 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
           required
           value={formData.checkOutDate}
           onChange={(e) => setFormData({ ...formData, checkOutDate: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="time"
           value={formData.checkOutTime}
           onChange={(e) => setFormData({ ...formData, checkOutTime: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -298,7 +301,7 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
         placeholder="Confirmation Number"
         value={formData.confirmationNumber}
         onChange={(e) => setFormData({ ...formData, confirmationNumber: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <textarea
@@ -306,12 +309,12 @@ function EditHotelForm({ block, tripId }: { block: HotelBlock; tripId: string })
         value={formData.notes}
         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         rows={3}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>
@@ -343,7 +346,7 @@ function EditLayoverForm({ block, tripId }: { block: LayoverBlock; tripId: strin
         options={AIRPORTS}
         placeholder="Airport/Location *"
         required
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -354,7 +357,7 @@ function EditLayoverForm({ block, tripId }: { block: LayoverBlock; tripId: strin
             required
             value={formData.arrivalTime}
             onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
           />
         </div>
         <div>
@@ -364,7 +367,7 @@ function EditLayoverForm({ block, tripId }: { block: LayoverBlock; tripId: strin
             required
             value={formData.departureTime}
             onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
-            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
           />
         </div>
       </div>
@@ -374,7 +377,7 @@ function EditLayoverForm({ block, tripId }: { block: LayoverBlock; tripId: strin
         onChange={(value) => setFormData({ ...formData, terminal: value })}
         options={TERMINALS}
         placeholder="Terminal"
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <textarea
@@ -382,12 +385,12 @@ function EditLayoverForm({ block, tripId }: { block: LayoverBlock; tripId: strin
         value={formData.notes}
         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         rows={3}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>
@@ -423,14 +426,14 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
           options={TRANSPORT_TYPES}
           placeholder="Type *"
           required
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="text"
           placeholder="Company"
           value={formData.company}
           onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -439,7 +442,7 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
         placeholder="Confirmation Number"
         value={formData.confirmationNumber}
         onChange={(e) => setFormData({ ...formData, confirmationNumber: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -448,7 +451,7 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
         placeholder="Pickup Location *"
         value={formData.pickupLocation}
         onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -456,7 +459,7 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
         required
         value={formData.pickupDateTime}
         onChange={(e) => setFormData({ ...formData, pickupDateTime: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -465,7 +468,7 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
         placeholder="Dropoff Location *"
         value={formData.dropoffLocation}
         onChange={(e) => setFormData({ ...formData, dropoffLocation: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -473,7 +476,7 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
         required
         value={formData.dropoffDateTime}
         onChange={(e) => setFormData({ ...formData, dropoffDateTime: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <textarea
@@ -481,18 +484,17 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
         value={formData.notes}
         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         rows={3}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>
     </form>
   )
-}
 
 function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
   const router = useRouter()
@@ -519,7 +521,7 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
         placeholder="Site/Venue Name *"
         value={formData.siteName}
         onChange={(e) => setFormData({ ...formData, siteName: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -528,7 +530,7 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
         placeholder="Address *"
         value={formData.address}
         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <input
@@ -536,7 +538,7 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
         placeholder="Contact Name"
         value={formData.contactName}
         onChange={(e) => setFormData({ ...formData, contactName: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <div className="grid sm:grid-cols-2 gap-4">
@@ -545,14 +547,14 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
           placeholder="Contact Phone"
           value={formData.contactPhone}
           onChange={(e) => setFormData({ ...formData, contactPhone: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
         <input
           type="email"
           placeholder="Contact Email"
           value={formData.contactEmail}
           onChange={(e) => setFormData({ ...formData, contactEmail: e.target.value })}
-          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
         />
       </div>
 
@@ -561,18 +563,17 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
         value={formData.notes}
         onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
         rows={3}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>
     </form>
   )
-}
 
 function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId: string }) {
   const router = useRouter()
@@ -600,7 +601,7 @@ function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId:
         placeholder="Caption (optional)"
         value={caption}
         onChange={(e) => setCaption(e.target.value)}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <textarea
@@ -608,7 +609,7 @@ function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId:
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         rows={3}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50 resize-none"
       />
 
       {block.extractedText && (
@@ -620,7 +621,7 @@ function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId:
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>
@@ -648,7 +649,7 @@ function EditNoteForm({ block, tripId }: { block: NoteBlock; tripId: string }) {
         placeholder="Title (optional)"
         value={formData.title}
         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <textarea
@@ -657,12 +658,12 @@ function EditNoteForm({ block, tripId }: { block: NoteBlock; tripId: string }) {
         value={formData.text}
         onChange={(e) => setFormData({ ...formData, text: e.target.value })}
         rows={8}
-        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
       />
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+        className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
       >
         Save Changes
       </button>

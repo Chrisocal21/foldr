@@ -415,7 +415,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
 
   const kanbanColumns: { key: TodoStatus; label: string; icon: string; color: string }[] = [
     { key: 'todo', label: 'To Do', icon: '○', color: 'text-slate-400' },
-    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-blue-400' },
+    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-slate-400' },
     { key: 'done', label: 'Done', icon: '●', color: 'text-green-400' },
   ]
 
@@ -469,7 +469,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const countdown = getCountdown()
 
   const statusColors = {
-    upcoming: 'bg-blue-500',
+    upcoming: 'bg-slate-500',
     active: 'bg-green-500',
     past: 'bg-slate-600'
   }
@@ -481,7 +481,10 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
@@ -557,7 +560,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1">
                   <h1
-                    className="text-2xl font-bold text-white cursor-pointer hover:text-blue-400 transition-colors"
+                    className="text-2xl font-bold text-white cursor-pointer hover:text-slate-300 transition-colors"
                     onClick={() => setEditingTitle(true)}
                     title="Tap to edit"
                   >
@@ -575,7 +578,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   {countdown && (
-                    <span className={`text-xs px-3 py-1 rounded font-medium ${countdown.type === 'active' ? 'bg-green-600/20 text-green-400' : 'bg-blue-600/20 text-blue-400'}`}>
+                    <span className={`text-xs px-3 py-1 rounded font-medium ${countdown.type === 'active' ? 'bg-green-600/20 text-green-400' : 'bg-slate-600/20 text-slate-400'}`}>
                       <svg className="w-3 h-3 inline mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 6v6l4 2" />
@@ -618,7 +621,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           ) : (
             <div
-              className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-blue-400 transition-colors"
+              className="flex items-center gap-2 text-slate-300 cursor-pointer hover:text-white transition-colors"
               onClick={() => setEditingDates(true)}
               title="Tap to edit"
             >
@@ -742,7 +745,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all ${
                       trip.category === cat.value
-                        ? 'bg-blue-600 text-white'
+                        ? 'bg-white text-slate-900'
                         : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
                     }`}
                   >
@@ -824,7 +827,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
         {/* Add Block Button */}
         <Link
           href={`/trips/${id}/add-block`}
-          className="block w-full bg-blue-600 hover:bg-blue-700 text-white text-center py-3 rounded-lg font-medium mb-4 transition-colors"
+          className="block w-full bg-white hover:bg-slate-100 text-slate-900 text-center py-3 rounded-lg font-medium mb-4 transition-colors"
         >
           + Add Block
         </Link>
@@ -838,8 +841,8 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               onClick={() => handleToggleTasksCollapse(false)}
               className="bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-slate-700/50 transition-colors"
             >
-              <div className="bg-blue-600/20 p-1.5 rounded-lg">
-                <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <div className="bg-slate-600/20 p-1.5 rounded-lg">
+                <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <rect x="3" y="3" width="7" height="18" rx="1" />
                   <rect x="14" y="3" width="7" height="12" rx="1" />
                 </svg>
@@ -886,15 +889,15 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               {/* Header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
                 <div className="flex items-center gap-3">
-                  <div className="bg-blue-600/20 p-1.5 rounded-lg">
-                    <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <div className="bg-slate-600/20 p-1.5 rounded-lg">
+                    <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <rect x="3" y="3" width="7" height="18" rx="1" />
                       <rect x="14" y="3" width="7" height="12" rx="1" />
                     </svg>
                   </div>
                   <span className="text-white font-medium">Task Board</span>
                   {todoCount > 0 && (
-                    <span className="text-xs bg-blue-600/20 text-blue-400 px-2 py-0.5 rounded-full">
+                    <span className="text-xs bg-slate-600/20 text-slate-400 px-2 py-0.5 rounded-full">
                       {todoCount} active
                     </span>
                   )}
@@ -936,7 +939,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                     onChange={(e) => setNewTodoText(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddTodo()}
                     placeholder="Add a task..."
-                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                    className="flex-1 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:border-slate-400"
                   />
                   <button
                     onClick={() => setShowAdvanced(!showAdvanced)}
@@ -951,7 +954,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   <button
                     onClick={handleAddTodo}
                     disabled={!newTodoText.trim()}
-                    className="bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 disabled:text-slate-500 text-white px-3 py-2 rounded-lg transition-colors"
+                    className="bg-white hover:bg-slate-100 disabled:bg-slate-700 disabled:text-slate-500 text-slate-900 px-3 py-2 rounded-lg transition-colors"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path d="M12 5v14m-7-7h14" />
@@ -969,7 +972,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                           type="date"
                           value={dueDate}
                           onChange={(e) => setDueDate(e.target.value)}
-                          className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                          className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-slate-400"
                         />
                       </div>
                       <div className="flex-1">
@@ -977,7 +980,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                         <select
                           value={priority}
                           onChange={(e) => setPriority(e.target.value as TodoPriority | '')}
-                          className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                          className="w-full bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-slate-400"
                         >
                           <option value="">None</option>
                           <option value="low">Low</option>
@@ -1103,7 +1106,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
               {/* Map */}
               <div>
                 <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>

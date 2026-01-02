@@ -75,7 +75,10 @@ export default function DuplicateTripPage({ params }: { params: Promise<{ id: st
   if (!originalTrip) return null
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
       {/* Header */}
       <header className="bg-slate-900 border-b border-slate-800">
         <div className="container mx-auto px-4 py-4">
@@ -116,7 +119,7 @@ export default function DuplicateTripPage({ params }: { params: Promise<{ id: st
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder="e.g., Tokyo Summer 2025"
-              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
             />
           </div>
 
@@ -131,7 +134,7 @@ export default function DuplicateTripPage({ params }: { params: Promise<{ id: st
                 required
                 value={formData.startDate}
                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               />
             </div>
 
@@ -145,13 +148,13 @@ export default function DuplicateTripPage({ params }: { params: Promise<{ id: st
                 required
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-white/50"
               />
             </div>
           </div>
 
-          <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-4">
-            <p className="text-sm text-blue-300">
+          <div className="bg-slate-600/10 border border-slate-600/30 rounded-lg p-4">
+            <p className="text-sm text-slate-300">
               <strong>Note:</strong> All blocks will be copied, but dates will be cleared so you can update them for the new trip.
             </p>
           </div>
@@ -159,7 +162,7 @@ export default function DuplicateTripPage({ params }: { params: Promise<{ id: st
           <div className="pt-4">
             <button
               type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-medium transition-colors"
+              className="w-full bg-white hover:bg-slate-100 text-slate-900 py-3 rounded-lg font-medium transition-colors"
             >
               Duplicate Trip
             </button>

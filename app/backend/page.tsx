@@ -99,7 +99,7 @@ export default function BackendPage() {
       <div className="min-h-screen bg-black text-white flex items-center justify-center">
         <div className="text-center">
           <p className="text-zinc-400 mb-4">Please log in first</p>
-          <Link href="/" className="text-blue-400 hover:underline">Go to Home</Link>
+          <Link href="/" className="text-slate-400 hover:underline">Go to Home</Link>
         </div>
       </div>
     );
@@ -145,7 +145,7 @@ export default function BackendPage() {
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
-            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-blue-600 file:text-white file:cursor-pointer"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:bg-white text-slate-900 file:text-white file:cursor-pointer"
           />
         </div>
 
@@ -163,7 +163,7 @@ export default function BackendPage() {
         <button
           onClick={handleUpload}
           disabled={!selectedFile || uploading}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-3 rounded-lg transition-colors"
+          className="w-full bg-white hover:bg-slate-100 disabled:bg-zinc-700 disabled:text-zinc-500 text-white font-semibold py-3 rounded-lg transition-colors"
         >
           {uploading ? 'Uploading...' : 'Upload Image'}
         </button>
@@ -198,7 +198,7 @@ export default function BackendPage() {
                 </div>
                 <button
                   onClick={() => copyUrl(file.url)}
-                  className="text-blue-400 hover:text-blue-300 p-2"
+                  className="text-slate-400 hover:text-slate-300 p-2"
                   title="Copy URL"
                 >
                   📋
@@ -226,3 +226,5 @@ export default function BackendPage() {
     </div>
   );
 }
+
+

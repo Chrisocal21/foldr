@@ -1,5 +1,6 @@
 import { Trip, Block, TripStatus, Todo, PackingItem, PackingCategory, PackingTemplate, Expense, ExpenseCategory } from './types'
 import { syncToCloud, isLoggedIn, immediateDelete } from './cloud-sync'
+import { queueMutation, isOnline, getOfflineQueue } from './offline-queue'
 
 const TRIPS_KEY = 'foldr_trips'
 const BLOCKS_KEY = 'foldr_blocks'
@@ -323,6 +324,7 @@ export function saveTrip(trip: Trip): void {
   console.log('[Storage] saveTrip called for:', trip.name)
   const trips = getTrips()
   const index = trips.findIndex(t => t.id === trip.id)
+  const isNew = index < 0
   
   if (index >= 0) {
     trips[index] = { ...trip, updatedAt: new Date().toISOString() }
@@ -331,6 +333,14 @@ export function saveTrip(trip: Trip): void {
   }
   
   localStorage.setItem(TRIPS_KEY, JSON.stringify(trips))
+  
+  // If offline, queue the mutation for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing trip mutation')
+    queueMutation(isNew ? 'create' : 'update', 'trip', trip.id, trip)
+    return
+  }
+  
   console.log('[Storage] Calling triggerSync...')
   triggerSync()
 }
@@ -351,6 +361,15 @@ export async function deleteTrip(tripId: string): Promise<void> {
   
   const blocks = getBlocks().filter(b => b.tripId !== tripId)
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+  
+  // If offline, queue deletions for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing trip deletion')
+    queueMutation('delete', 'trip', tripId)
+    blockIds.forEach(id => queueMutation('delete', 'block', id))
+    console.log('[Storage] ========== DELETE TRIP END (queued) ==========')
+    return
+  }
   
   // IMMEDIATELY delete from cloud - no debouncing
   // This ensures the deletion reaches the server right away
@@ -409,6 +428,7 @@ export function getBlocksByTripId(tripId: string): Block[] {
 export function saveBlock(block: Block): void {
   const blocks = getBlocks()
   const index = blocks.findIndex(b => b.id === block.id)
+  const isNew = index < 0
   
   if (index >= 0) {
     blocks[index] = { ...block, updatedAt: new Date().toISOString() }
@@ -417,6 +437,14 @@ export function saveBlock(block: Block): void {
   }
   
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+  
+  // If offline, queue the mutation for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing block mutation')
+    queueMutation(isNew ? 'create' : 'update', 'block', block.id, block)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -424,6 +452,14 @@ export function deleteBlock(blockId: string): void {
   addDeletedItem('blocks', blockId)
   const blocks = getBlocks().filter(b => b.id !== blockId)
   localStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks))
+  
+  // If offline, queue the deletion for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing block deletion')
+    queueMutation('delete', 'block', blockId)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -489,6 +525,7 @@ export function getTodos(): Todo[] {
 export function saveTodo(todo: Todo): void {
   const todos = getTodos()
   const index = todos.findIndex(t => t.id === todo.id)
+  const isNew = index < 0
   
   if (index >= 0) {
     todos[index] = { ...todo, updatedAt: new Date().toISOString() }
@@ -497,6 +534,14 @@ export function saveTodo(todo: Todo): void {
   }
   
   localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+  
+  // If offline, queue the mutation for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing todo mutation')
+    queueMutation(isNew ? 'create' : 'update', 'todo', todo.id, todo)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -504,6 +549,14 @@ export function deleteTodo(todoId: string): void {
   addDeletedItem('todos', todoId)
   const todos = getTodos().filter(t => t.id !== todoId)
   localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+  
+  // If offline, queue the deletion for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing todo deletion')
+    queueMutation('delete', 'todo', todoId)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -514,6 +567,14 @@ export function toggleTodo(todoId: string): void {
     todos[index].completed = !todos[index].completed
     todos[index].updatedAt = new Date().toISOString()
     localStorage.setItem(TODOS_KEY, JSON.stringify(todos))
+    
+    // If offline, queue the update for later sync
+    if (!isOnline()) {
+      console.log('[Storage] Offline - queuing todo toggle')
+      queueMutation('update', 'todo', todoId, todos[index])
+      return
+    }
+    
     triggerSync()
   }
 }
@@ -547,6 +608,7 @@ export function savePackingItem(item: PackingItem): void {
   const data = localStorage.getItem(PACKING_KEY)
   const items: PackingItem[] = data ? JSON.parse(data) : []
   const index = items.findIndex(i => i.id === item.id)
+  const isNew = index < 0
   
   if (index >= 0) {
     items[index] = item
@@ -555,6 +617,14 @@ export function savePackingItem(item: PackingItem): void {
   }
   
   localStorage.setItem(PACKING_KEY, JSON.stringify(items))
+  
+  // If offline, queue the mutation for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing packing item mutation')
+    queueMutation(isNew ? 'create' : 'update', 'packingItem', item.id, item)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -563,6 +633,14 @@ export function deletePackingItem(itemId: string): void {
   const data = localStorage.getItem(PACKING_KEY)
   const items: PackingItem[] = data ? JSON.parse(data) : []
   localStorage.setItem(PACKING_KEY, JSON.stringify(items.filter(i => i.id !== itemId)))
+  
+  // If offline, queue the deletion for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing packing item deletion')
+    queueMutation('delete', 'packingItem', itemId)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -573,6 +651,14 @@ export function togglePackingItem(itemId: string): void {
   if (index >= 0) {
     items[index].packed = !items[index].packed
     localStorage.setItem(PACKING_KEY, JSON.stringify(items))
+    
+    // If offline, queue the update for later sync
+    if (!isOnline()) {
+      console.log('[Storage] Offline - queuing packing item toggle')
+      queueMutation('update', 'packingItem', itemId, items[index])
+      return
+    }
+    
     triggerSync()
   }
 }
@@ -686,6 +772,7 @@ export function saveExpense(expense: Expense): void {
   const data = localStorage.getItem(EXPENSES_KEY)
   const expenses: Expense[] = data ? JSON.parse(data) : []
   const index = expenses.findIndex(e => e.id === expense.id)
+  const isNew = index < 0
   
   if (index >= 0) {
     expenses[index] = expense
@@ -694,6 +781,14 @@ export function saveExpense(expense: Expense): void {
   }
   
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses))
+  
+  // If offline, queue the mutation for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing expense mutation')
+    queueMutation(isNew ? 'create' : 'update', 'expense', expense.id, expense)
+    return
+  }
+  
   triggerSync()
 }
 
@@ -702,6 +797,14 @@ export function deleteExpense(expenseId: string): void {
   const data = localStorage.getItem(EXPENSES_KEY)
   const expenses: Expense[] = data ? JSON.parse(data) : []
   localStorage.setItem(EXPENSES_KEY, JSON.stringify(expenses.filter(e => e.id !== expenseId)))
+  
+  // If offline, queue the deletion for later sync
+  if (!isOnline()) {
+    console.log('[Storage] Offline - queuing expense deletion')
+    queueMutation('delete', 'expense', expenseId)
+    return
+  }
+  
   triggerSync()
 }
 

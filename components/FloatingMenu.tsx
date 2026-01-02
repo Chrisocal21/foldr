@@ -76,9 +76,9 @@ export default function FloatingMenu({ tripId, tripName }: FloatingMenuProps) {
           {/* To-Do Button */}
           <button
             onClick={openTodos}
-            className={`flex items-center gap-2 ${activePanel === 'todos' ? 'bg-blue-600' : 'bg-zinc-800 hover:bg-zinc-700'} text-white pl-3 pr-4 py-2 rounded-full shadow-lg transition-all`}
+            className={`flex items-center gap-2 ${activePanel === 'todos' ? 'bg-white text-slate-900' : 'bg-zinc-800 hover:bg-zinc-700 text-white'} pl-3 pr-4 py-2 rounded-full shadow-lg transition-all`}
           >
-            <span className={`w-8 h-8 ${activePanel === 'todos' ? 'bg-blue-400' : 'bg-blue-500'} rounded-full flex items-center justify-center`}>
+            <span className={`w-8 h-8 ${activePanel === 'todos' ? 'bg-slate-200' : 'bg-slate-500'} rounded-full flex items-center justify-center`}>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path d="M9 12l2 2 4-4" />
                 <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -118,12 +118,16 @@ export default function FloatingMenu({ tripId, tripName }: FloatingMenuProps) {
       {/* Main FAB Button */}
       <button
         onClick={toggleMenu}
-        className={`fixed bottom-6 right-6 w-14 h-14 ${isOpen ? 'bg-zinc-600 rotate-45' : 'bg-blue-500 hover:bg-blue-400'} text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50`}
+        className={`fixed bottom-6 right-6 w-14 h-14 ${isOpen ? 'bg-zinc-600 rotate-45' : 'bg-white hover:bg-slate-100'} text-white rounded-full shadow-lg flex items-center justify-center transition-all z-50 overflow-hidden`}
         title="Menu"
       >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-          <path d="M12 5v14m-7-7h14" />
-        </svg>
+        {isOpen ? (
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M12 5v14m-7-7h14" />
+          </svg>
+        ) : (
+          <img src="/logos/TRIPFLDR LOGO BUTTON.png" alt="" className="w-10 h-10 object-contain" />
+        )}
       </button>
     </>
   );
@@ -367,7 +371,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
 
   const columns: { key: TodoStatus; label: string; icon: string; color: string }[] = [
     { key: 'todo', label: 'To Do', icon: '○', color: 'text-zinc-400' },
-    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-blue-400' },
+    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-slate-400' },
     { key: 'done', label: 'Done', icon: '●', color: 'text-green-400' },
   ];
 
@@ -405,7 +409,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
               </span>
             )}
             {todo.tripIds.length > 0 && (
-              <span className="text-xs text-blue-400">
+              <span className="text-xs text-slate-400">
                 📍{todo.tripIds.length}
               </span>
             )}
@@ -450,7 +454,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                 <textarea
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
-                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500 resize-none"
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-white resize-none"
                   rows={3}
                   autoFocus
                 />
@@ -467,7 +471,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                       className={`flex-1 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                         editStatus === status
                           ? status === 'todo' ? 'bg-zinc-600 text-white' 
-                            : status === 'in-progress' ? 'bg-blue-600 text-white'
+                            : status === 'in-progress' ? 'bg-white text-slate-900'
                             : 'bg-green-600 text-white'
                           : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700'
                       }`}
@@ -486,7 +490,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                     type="date"
                     value={editDueDate}
                     onChange={(e) => setEditDueDate(e.target.value)}
-                    className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white"
                   />
                 </div>
                 <div className="flex-1">
@@ -494,7 +498,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                   <select
                     value={editPriority}
                     onChange={(e) => setEditPriority(e.target.value as TodoPriority | '')}
-                    className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-blue-500"
+                    className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-white"
                   >
                     <option value="">None</option>
                     <option value="low">Low</option>
@@ -515,7 +519,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                         onClick={() => toggleEditTripTag(trip.id)}
                         className={`text-xs px-2 py-1 rounded-full transition-colors ${
                           editTripIds.includes(trip.id) 
-                            ? 'bg-blue-600 text-white' 
+                            ? 'bg-white text-slate-900' 
                             : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'
                         }`}
                       >
@@ -573,7 +577,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
               <button
                 onClick={handleSaveEdit}
                 disabled={!editText.trim()}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white rounded-lg text-sm transition-colors"
+                className="px-4 py-2 bg-white text-slate-900 hover:bg-slate-100 disabled:bg-zinc-700 disabled:text-zinc-500 rounded-lg text-sm transition-colors"
               >
                 Save
               </button>
@@ -590,8 +594,8 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 bg-zinc-800 border-b border-zinc-700">
         <h3 className="font-semibold text-white flex items-center gap-2">
-          <span className="text-blue-400">☰</span> Task Board
-          {todoCount > 0 && <span className="text-xs bg-blue-600 px-2 py-0.5 rounded-full">{todoCount} active</span>}
+          <span className="text-slate-400">☰</span> Task Board
+          {todoCount > 0 && <span className="text-xs bg-white text-slate-900 px-2 py-0.5 rounded-full">{todoCount} active</span>}
         </h3>
         <div className="flex items-center gap-2">
           <button 
@@ -626,7 +630,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
             onChange={(e) => setNewTodo(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="Add a task..."
-            className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+            className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-white"
           />
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -640,7 +644,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
           </button>
           <button
             onClick={() => setShowTripPicker(!showTripPicker)}
-            className={`px-3 py-2 rounded-lg border transition-colors ${selectedTripIds.length > 0 ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:text-white'}`}
+            className={`px-3 py-2 rounded-lg border transition-colors ${selectedTripIds.length > 0 ? 'bg-white text-slate-900 border-white' : 'bg-zinc-800 border-zinc-600 text-zinc-400 hover:text-white'}`}
             title="Tag to trips"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -650,7 +654,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
           <button
             onClick={handleAdd}
             disabled={!newTodo.trim()}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-2 rounded-lg transition-colors"
+            className="bg-white text-slate-900 hover:bg-slate-100 disabled:bg-zinc-700 disabled:text-zinc-500 px-3 py-2 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M12 5v14m-7-7h14" />
@@ -668,7 +672,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-white"
                 />
               </div>
               <div className="flex-1">
@@ -676,7 +680,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as TodoPriority | '')}
-                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-white"
                 >
                   <option value="">None</option>
                   <option value="low">Low</option>
@@ -713,7 +717,7 @@ function GlobalTodosPanel({ onClose, onFullscreenChange }: { onClose: () => void
               <button
                 key={trip.id}
                 onClick={() => toggleTripTag(trip.id)}
-                className={`text-xs px-2 py-1 rounded-full transition-colors ${selectedTripIds.includes(trip.id) ? 'bg-blue-600 text-white' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`}
+                className={`text-xs px-2 py-1 rounded-full transition-colors ${selectedTripIds.includes(trip.id) ? 'bg-white text-slate-900' : 'bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}`}
               >
                 {trip.name}
               </button>
@@ -908,7 +912,7 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
 
   const columns: { key: string; label: string; icon: string; color: string }[] = [
     { key: 'todo', label: 'To Do', icon: '○', color: 'text-zinc-400' },
-    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-blue-400' },
+    { key: 'in-progress', label: 'Doing', icon: '◐', color: 'text-slate-400' },
     { key: 'done', label: 'Done', icon: '●', color: 'text-green-400' },
   ];
 
@@ -920,8 +924,8 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
     }`}>
       <div className="flex items-center justify-between px-4 py-3 bg-zinc-800 border-b border-zinc-700">
         <h3 className="font-semibold text-white flex items-center gap-2">
-          <span className="text-blue-400">☰</span> Task Board
-          {todoCount > 0 && <span className="text-xs bg-blue-600 px-2 py-0.5 rounded-full">{todoCount} active</span>}
+          <span className="text-slate-400">☰</span> Task Board
+          {todoCount > 0 && <span className="text-xs bg-white text-slate-900 px-2 py-0.5 rounded-full">{todoCount} active</span>}
         </h3>
         <div className="flex items-center gap-2">
           <button 
@@ -956,7 +960,7 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
             onChange={(e) => setNewTodo(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
             placeholder="Add a task..."
-            className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+            className="flex-1 bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-white"
           />
           <button
             onClick={() => setShowAdvanced(!showAdvanced)}
@@ -971,7 +975,7 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
           <button
             onClick={handleAdd}
             disabled={!newTodo.trim()}
-            className="bg-blue-600 hover:bg-blue-500 disabled:bg-zinc-700 disabled:text-zinc-500 text-white px-3 py-2 rounded-lg transition-colors"
+            className="bg-white text-slate-900 hover:bg-slate-100 disabled:bg-zinc-700 disabled:text-zinc-500 px-3 py-2 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M12 5v14m-7-7h14" />
@@ -989,7 +993,7 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-white"
                 />
               </div>
               <div className="flex-1">
@@ -997,7 +1001,7 @@ function TripTodosPanel({ tripId, tripName, onClose, onFullscreenChange }: { tri
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as any)}
-                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-blue-500"
+                  className="w-full bg-zinc-700 border border-zinc-600 rounded px-2 py-1 text-white text-sm focus:outline-none focus:border-white"
                 >
                   <option value="">None</option>
                   <option value="low">Low</option>

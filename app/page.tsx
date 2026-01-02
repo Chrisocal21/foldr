@@ -11,7 +11,7 @@ import { clearAllLocalData } from '@/lib/storage'
 function AuthLoading() {
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-      <div className="animate-spin h-8 w-8 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+      <div className="animate-spin h-8 w-8 border-2 border-white border-t-transparent rounded-full"></div>
     </div>
   )
 }
@@ -108,29 +108,34 @@ function AuthFormInner() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Subtle accent glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-slate-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[300px] bg-slate-400/5 rounded-full blur-3xl pointer-events-none" />
+      
+      <div className="w-full max-w-sm relative z-10">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <img 
-            src="/logos/logo.png" 
+            src="/logos/TRIPFLDR-FULL HEADER LOGO.png" 
             alt="TripFldr" 
-            className="h-12 w-auto mx-auto mb-4"
+            className="h-[160px] w-auto mx-auto"
             onError={(e) => {
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
               target.insertAdjacentHTML('afterend', '<span class="text-3xl font-bold" style="color: #6B9AE8">TripFldr</span>');
             }}
           />
-          <p className="text-slate-400">
-            {mode === 'login' && 'Sign in to sync your trips'}
-            {mode === 'signup' && 'Create an account to sync your trips'}
-            {mode === 'reset' && 'Reset your password'}
-          </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="bg-slate-800 rounded-xl p-6 border border-slate-700">
+          <p className="text-slate-400 text-center mb-6">
+            {mode === 'login' && 'Sign in to sync your trips'}
+            {mode === 'signup' && 'Create an account to sync your trips'}
+            {mode === 'reset' && 'Reset your password'}
+          </p>
+          
           {error && (
             <div className="bg-red-500/20 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg mb-4 text-sm">
               {error}
@@ -153,7 +158,7 @@ function AuthFormInner() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                 placeholder="you@example.com"
               />
             </div>
@@ -169,7 +174,7 @@ function AuthFormInner() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                   placeholder="••••••••"
                 />
                 <button
@@ -204,7 +209,7 @@ function AuthFormInner() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 pr-10 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                       placeholder="••••••••"
                     />
                     <button
@@ -234,7 +239,7 @@ function AuthFormInner() {
                     value={inviteCode}
                     onChange={(e) => setInviteCode(e.target.value)}
                     required
-                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full bg-slate-700 border border-slate-600 rounded-lg px-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 focus:border-transparent"
                     placeholder="Enter invite code"
                   />
                 </div>
@@ -245,7 +250,7 @@ function AuthFormInner() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full mt-6 bg-white hover:bg-slate-100 disabled:bg-white/50 text-slate-900 font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -275,7 +280,7 @@ function AuthFormInner() {
                 Don&apos;t have an account?{' '}
                 <button
                   onClick={() => { setMode('signup'); setError(''); setSuccess(''); }}
-                  className="text-blue-400 hover:text-blue-300"
+                  className="text-white hover:text-slate-300"
                 >
                   Sign up
                 </button>
@@ -295,7 +300,7 @@ function AuthFormInner() {
               Already have an account?{' '}
               <button
                 onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
-                className="text-blue-400 hover:text-blue-300"
+                className="text-white hover:text-slate-300"
               >
                 Sign in
               </button>
@@ -306,7 +311,7 @@ function AuthFormInner() {
               Remember your password?{' '}
               <button
                 onClick={() => { setMode('login'); setError(''); setSuccess(''); }}
-                className="text-blue-400 hover:text-blue-300"
+                className="text-white hover:text-slate-300"
               >
                 Sign in
               </button>

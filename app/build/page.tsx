@@ -200,7 +200,7 @@ export default function BuildPage() {
       case 'complete':
         return 'bg-green-500/20 text-green-400 border-green-500/30';
       case 'in-progress':
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
       case 'planned':
         return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
       default:
@@ -384,3 +384,4 @@ export default function BuildPage() {
     </div>
   );
 }
+

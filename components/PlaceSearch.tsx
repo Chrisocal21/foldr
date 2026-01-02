@@ -104,7 +104,7 @@ export function PlaceSearch({
           onChange={(e) => handleInputChange(e.target.value)}
           onFocus={() => results.length > 0 && setShowDropdown(true)}
           placeholder={placeholder}
-          className={`w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 ${className}`}
+          className={`w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50 ${className}`}
         />
         
         {/* Search/Location Icon */}
@@ -118,10 +118,7 @@ export function PlaceSearch({
               <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-              <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
+            <img src="/logos/TRIPFLDR LOGO BUTTON.png" alt="" className="w-5 h-5 object-contain" />
           )}
         </div>
       </div>
@@ -137,10 +134,7 @@ export function PlaceSearch({
               className="w-full px-4 py-3 text-left hover:bg-slate-700 transition-colors first:rounded-t-lg last:rounded-b-lg border-b border-slate-700 last:border-0"
             >
               <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
+                <img src="/logos/TRIPFLDR LOGO BUTTON.png" alt="" className="w-5 h-5 object-contain mt-0.5 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium truncate">
                     {place.city}{place.country && <span className="text-slate-400">, {place.country}</span>}
@@ -179,3 +173,4 @@ export function PlaceSearch({
     </div>
   )
 }
+

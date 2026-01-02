@@ -118,7 +118,7 @@ export function PackingList({ tripId }: PackingListProps) {
             </button>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="text-xs px-3 py-1.5 bg-white hover:bg-slate-100 text-white rounded-lg transition-colors"
             >
               + Item
             </button>
@@ -150,7 +150,7 @@ export function PackingList({ tripId }: PackingListProps) {
                 onClick={() => setFilter(f)}
                 className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                   filter === f
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-white text-slate-900'
                     : 'bg-slate-700 text-slate-400 hover:text-slate-300'
                 }`}
               >
@@ -188,13 +188,13 @@ export function PackingList({ tripId }: PackingListProps) {
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               placeholder="Item name..."
-              className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/50"
               autoFocus
             />
             <select
               value={newItemCategory}
               onChange={(e) => setNewItemCategory(e.target.value as PackingCategory)}
-              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/50"
             >
               {Object.entries(CATEGORY_INFO).map(([key, { label, icon }]) => (
                 <option key={key} value={key}>{icon} {label}</option>
@@ -202,7 +202,7 @@ export function PackingList({ tripId }: PackingListProps) {
             </select>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors"
+              className="px-4 py-2 bg-white hover:bg-slate-100 text-white rounded-lg text-sm transition-colors"
             >
               Add
             </button>
@@ -277,3 +277,4 @@ export function PackingList({ tripId }: PackingListProps) {
     </div>
   )
 }
+
