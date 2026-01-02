@@ -495,6 +495,7 @@ function EditTransportForm({ block, tripId }: { block: TransportBlock; tripId: s
       </button>
     </form>
   )
+}
 
 function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
   const router = useRouter()
@@ -574,6 +575,7 @@ function EditWorkForm({ block, tripId }: { block: WorkBlock; tripId: string }) {
       </button>
     </form>
   )
+}
 
 function EditScreenshotForm({ block, tripId }: { block: ScreenshotBlock; tripId: string }) {
   const router = useRouter()

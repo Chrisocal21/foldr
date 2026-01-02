@@ -145,7 +145,7 @@ function BlockTypeButton({
       }`}
     >
       <div className="flex flex-col items-center gap-2">
-        <div className={active ? 'text-white' : ''}>{icon}</div></div>
+        <div className={active ? 'text-white' : ''}>{icon}</div>
         <span className="text-sm font-medium">{label}</span>
       </div>
     </button>
