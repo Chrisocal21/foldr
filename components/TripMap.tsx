@@ -118,8 +118,9 @@ export function TripMap({ latitude, longitude, destination, className = '', bloc
 
   return (
     <>
+      {/* Hide small map when fullscreen is open to prevent z-index issues */}
       <div 
-        className={`rounded-xl overflow-hidden cursor-pointer relative group ${className}`} 
+        className={`rounded-xl overflow-hidden cursor-pointer relative group ${className} ${isFullscreen ? 'invisible' : ''}`} 
         style={{ minHeight: '200px', height: '200px' }}
         onClick={() => setIsFullscreen(true)}
       >

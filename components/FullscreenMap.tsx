@@ -188,7 +188,7 @@ export function FullscreenMap({ isOpen, onClose, latitude, longitude, destinatio
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div className="fixed inset-0 z-[9999] bg-black">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-[1000] bg-gradient-to-b from-black/80 to-transparent p-4">
         <div className="flex items-center justify-between">

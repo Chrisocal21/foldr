@@ -126,7 +126,7 @@ export function FullscreenWeather({ isOpen, onClose, latitude, longitude, destin
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
       {/* Header */}
       <div className="bg-slate-900/50 backdrop-blur border-b border-slate-700/50">
         <div className="p-4 flex items-center justify-between">
