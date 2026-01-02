@@ -4,13 +4,14 @@ import { useState, useEffect, use } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Trip, Block, Todo, TodoPriority, TodoStatus, TripCategory } from '@/lib/types'
-import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, TIMEZONES, getTimeAtTimezone, getTimezoneAbbr, getTodos, toggleTodo, deleteTodo, saveTodo } from '@/lib/storage'
+import { getTripById, getBlocksByTripId, deleteTrip, deleteBlock, saveBlock, saveTrip, TIMEZONES, getTimeAtTimezone, getTimezoneAbbr, getTodos, toggleTodo, deleteTodo, saveTodo, PlaceResult } from '@/lib/storage'
 import { BlockCard } from '@/components/BlockCard'
 import { exportTripToPDF } from '@/lib/pdf-export'
 import FloatingMenu from '@/components/FloatingMenu'
 import { TripMap } from '@/components/TripMap'
 import { WeatherWidget } from '@/components/WeatherWidget'
 import { useSettings } from '@/lib/settings-context'
+import { PlaceSearch } from '@/components/PlaceSearch'
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -36,9 +37,11 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
   const [editingDates, setEditingDates] = useState(false)
   const [editingColor, setEditingColor] = useState(false)
   const [editingTimezone, setEditingTimezone] = useState(false)
+  const [editingLocation, setEditingLocation] = useState(false)
   const [titleValue, setTitleValue] = useState('')
   const [startDateValue, setStartDateValue] = useState('')
   const [endDateValue, setEndDateValue] = useState('')
+  const [locationValue, setLocationValue] = useState('')
   const [currentTemp, setCurrentTemp] = useState<{ temp: number; icon: string } | null>(null)
   const [editingCategory, setEditingCategory] = useState(false)
   const [sunData, setSunData] = useState<{ sunrise: string; sunset: string } | null>(null)
@@ -242,6 +245,7 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
     setTitleValue(tripData.name)
     setStartDateValue(tripData.startDate)
     setEndDateValue(tripData.endDate)
+    setLocationValue(tripData.destination || '')
     setBlocks(getBlocksByTripId(id))
     setTripTodos(getTodos().filter(t => t.tripIds.includes(id)))
   }
@@ -261,6 +265,36 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
       saveTrip(updatedTrip)
       setTrip(updatedTrip)
       setEditingDates(false)
+    }
+  }
+
+  const handlePlaceSelect = (place: PlaceResult) => {
+    if (trip) {
+      const updatedTrip = { 
+        ...trip, 
+        destination: place.displayName,
+        latitude: place.latitude,
+        longitude: place.longitude
+      }
+      saveTrip(updatedTrip)
+      setTrip(updatedTrip)
+      setLocationValue(place.displayName)
+      setEditingLocation(false)
+    }
+  }
+
+  const handleClearLocation = () => {
+    if (trip) {
+      const updatedTrip = { 
+        ...trip, 
+        destination: undefined,
+        latitude: undefined,
+        longitude: undefined
+      }
+      saveTrip(updatedTrip)
+      setTrip(updatedTrip)
+      setLocationValue('')
+      setEditingLocation(false)
     }
   }
 
@@ -566,13 +600,43 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                   >
                     {trip.name}
                   </h1>
-                  {trip.destination && (
-                    <p className="flex items-center gap-1 text-slate-400 text-sm mt-1">
+                  {editingLocation ? (
+                    <div className="mt-2 flex flex-col gap-2">
+                      <PlaceSearch
+                        value={locationValue}
+                        onChange={setLocationValue}
+                        onPlaceSelect={handlePlaceSelect}
+                        placeholder="Search for a destination..."
+                        className="bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white text-sm w-full"
+                      />
+                      <div className="flex gap-2">
+                        {trip.destination && (
+                          <button 
+                            onClick={handleClearLocation} 
+                            className="px-3 py-1.5 bg-red-600/20 text-red-400 hover:bg-red-600/30 rounded text-sm transition-colors"
+                          >
+                            Remove
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => { setEditingLocation(false); setLocationValue(trip.destination || ''); }} 
+                          className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white rounded text-sm transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p 
+                      className="flex items-center gap-1 text-slate-400 text-sm mt-1 cursor-pointer hover:text-slate-300 transition-colors"
+                      onClick={() => setEditingLocation(true)}
+                      title="Tap to edit location"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path d="M17.657 16.657L13.414 20.9a2 2 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                         <path d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
-                      {trip.destination}
+                      {trip.destination || 'Add destination'}
                     </p>
                   )}
                 </div>
