@@ -271,7 +271,7 @@ export function FullscreenWeather({ isOpen, onClose, latitude, longitude, destin
             {/* Summary Stats */}
             {daily.length > 0 && (
               <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/30">
-                <h3 className="text-lg font-semibold text-white mb-3">Today's Details</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">Today&apos;s Details</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
