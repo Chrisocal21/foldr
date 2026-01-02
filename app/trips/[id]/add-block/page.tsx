@@ -850,14 +850,58 @@ function ScreenshotForm({ tripId }: { tripId: string }) {
   })
   const [isProcessing, setIsProcessing] = useState(false)
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Compress image to reduce localStorage usage
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          const maxWidth = 1200  // Max width for screenshots
+          const maxHeight = 1200
+          let { width, height } = img
+          
+          // Scale down if needed
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height)
+            width *= ratio
+            height *= ratio
+          }
+          
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          ctx?.drawImage(img, 0, 0, width, height)
+          
+          // Compress as JPEG with 0.8 quality
+          const compressedData = canvas.toDataURL('image/jpeg', 0.8)
+          resolve(compressedData)
+        }
+        img.onerror = reject
+        img.src = e.target?.result as string
+      }
+      reader.onerror = reject
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setFormData({ ...formData, imageData: reader.result as string })
+      try {
+        // Compress the image before storing
+        const compressedData = await compressImage(file)
+        setFormData({ ...formData, imageData: compressedData })
+      } catch (error) {
+        console.error('Error compressing image:', error)
+        // Fallback to original if compression fails
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setFormData({ ...formData, imageData: reader.result as string })
+        }
+        reader.readAsDataURL(file)
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -872,8 +916,14 @@ function ScreenshotForm({ tripId }: { tripId: string }) {
     setIsProcessing(true)
     
     try {
-      // Extract text from image using OCR
-      const extractedText = await extractTextFromImage(formData.imageData)
+      // Extract text from image using OCR (gracefully handles offline mode)
+      let extractedText = ''
+      try {
+        extractedText = await extractTextFromImage(formData.imageData)
+      } catch (ocrError) {
+        console.log('OCR skipped:', ocrError)
+        // Continue without OCR - it's optional
+      }
       
       const block: ScreenshotBlock = {
         id: crypto.randomUUID(),
@@ -885,11 +935,24 @@ function ScreenshotForm({ tripId }: { tripId: string }) {
         updatedAt: new Date().toISOString(),
       }
       
-      saveBlock(block)
+      try {
+        saveBlock(block)
+      } catch (storageError: any) {
+        // Handle localStorage quota exceeded
+        if (storageError?.name === 'QuotaExceededError' || 
+            storageError?.message?.includes('quota') ||
+            storageError?.message?.includes('storage')) {
+          alert('Storage is full. Try deleting some old screenshots or trips.')
+          setIsProcessing(false)
+          return
+        }
+        throw storageError
+      }
+      
       router.push(`/trips/${tripId}`)
     } catch (error) {
       console.error('Error processing screenshot:', error)
-      alert('Error processing image. Please try again.')
+      alert('Error saving image. Please try again.')
       setIsProcessing(false)
     }
   }
