@@ -37,8 +37,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} dark-theme`}>
       <head>
-        <link rel="icon" href="/logos/favicon.ico" sizes="any" />
-        <link rel="icon" href="/logos/icon.png" type="image/png" />
+        <link rel="icon" href="/logos/app-icon.png" type="image/png" />
+        <link rel="icon" href="/logos/icon.png" type="image/png" sizes="32x32" />
         <link rel="apple-touch-icon" href="/logos/apple-touch-icon.png" />
         <link rel="preconnect" href="https://nominatim.openstreetmap.org" />
         <link rel="dns-prefetch" href="https://nominatim.openstreetmap.org" />
