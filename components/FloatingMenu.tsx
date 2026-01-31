@@ -112,6 +112,32 @@ export default function FloatingMenu({ tripId, tripName }: FloatingMenuProps) {
             </span>
             <span className="text-sm font-medium">Add Trip</span>
           </Link>
+
+          {/* Writing Tools Link */}
+          <Link
+            href="/write"
+            className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white pl-3 pr-4 py-2 rounded-full shadow-lg transition-all"
+          >
+            <span className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </span>
+            <span className="text-sm font-medium">✉️ Write</span>
+          </Link>
+
+          {/* Job Notes Link */}
+          <Link
+            href="/notes"
+            className="flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white pl-3 pr-4 py-2 rounded-full shadow-lg transition-all"
+          >
+            <span className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </span>
+            <span className="text-sm font-medium">📝 Job Notes</span>
+          </Link>
         </div>
       )}
 
