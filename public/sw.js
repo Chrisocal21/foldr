@@ -1,5 +1,5 @@
 // TripFldr Service Worker - Offline-First PWA
-const CACHE_VERSION = 'tripfldr-v1';
+const CACHE_VERSION = 'tripfldr-v2-travel-apis';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const DYNAMIC_CACHE = `${CACHE_VERSION}-dynamic`;
 
