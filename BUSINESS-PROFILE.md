@@ -377,7 +377,7 @@ Early-stage product. Live and functional with cloud sync.
 
 ## Live URL
 
-**Production:** https://foldr.recipeer-cbv.workers.dev
+**Production:** https://tripfldr.com/
 
 ---
 
