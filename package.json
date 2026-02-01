@@ -4,10 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx opennextjs-cloudflare build",
     "start": "next start",
     "lint": "next lint",
-    "deploy": "npx opennextjs-cloudflare build && npx wrangler pages deploy",
+    "deploy": "npx opennextjs-cloudflare build && npx wrangler pages deploy .open-next/worker",
     "preview": "npx opennextjs-cloudflare build && npx wrangler pages dev"
   },
   "dependencies": {
