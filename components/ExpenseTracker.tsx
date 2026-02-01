@@ -33,7 +33,9 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
   })
 
   useEffect(() => {
-    loadExpens
+    loadExpenses()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tripId])
 
   // Convert currencies when expenses change
   useEffect(() => {
@@ -59,9 +61,7 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
     }
     
     convertTotals()
-  }, [expenses, settings.defaultCurrency])es()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tripId])
+  }, [expenses, settings.defaultCurrency])
 
   const loadExpenses = () => {
     setExpenses(getExpenses(tripId))
