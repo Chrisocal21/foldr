@@ -20,6 +20,12 @@ export interface Trip {
   status: TripStatus
   createdAt: string
   updatedAt: string
+  // Enhanced metadata from travel APIs
+  countryCode?: string // ISO 3166-1 alpha-2 country code
+  countryName?: string // Full country name
+  flag?: string // Country flag emoji
+  currency?: string // Primary currency code (e.g., "EUR")
+  currencySymbol?: string // Currency symbol (e.g., "€")
 }
 
 export interface BaseBlock {
@@ -170,6 +176,9 @@ export interface Expense {
   category: ExpenseCategory
   date: string // ISO date string
   createdAt: string
+  // Enhanced for currency conversion
+  convertedAmount?: number // Amount in home currency
+  exchangeRate?: number // Rate used for conversion
 }
 
 export type ExpenseCategory = 

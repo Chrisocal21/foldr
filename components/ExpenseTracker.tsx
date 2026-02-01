@@ -11,6 +11,7 @@ import {
   EXPENSE_CATEGORIES 
 } from '@/lib/storage'
 import { useSettings } from '@/lib/settings-context'
+import { convertCurrency } from '@/lib/travel-apis'
 
 interface ExpenseTrackerProps {
   tripId: string
@@ -21,6 +22,8 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
   const [expenses, setExpenses] = useState<Expense[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null)
+  const [convertedTotals, setConvertedTotals] = useState<Record<string, number>>({})
+  const [isConverting, setIsConverting] = useState(false)
   const [newExpense, setNewExpense] = useState({
     description: '',
     amount: '',
@@ -30,7 +33,33 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
   })
 
   useEffect(() => {
-    loadExpenses()
+    loadExpens
+
+  // Convert currencies when expenses change
+  useEffect(() => {
+    async function convertTotals() {
+      if (Object.keys(totalsByCurrency).length === 0) return
+      
+      setIsConverting(true)
+      const converted: Record<string, number> = {}
+      
+      for (const [currency, total] of Object.entries(totalsByCurrency)) {
+        if (currency === settings.defaultCurrency) {
+          converted[currency] = total
+        } else {
+          const result = await convertCurrency(total, currency, settings.defaultCurrency)
+          if (result !== null) {
+            converted[currency] = result
+          }
+        }
+      }
+      
+      setConvertedTotals(converted)
+      setIsConverting(false)
+    }
+    
+    convertTotals()
+  }, [expenses, settings.defaultCurrency])es()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tripId])
 
@@ -120,15 +149,38 @@ export function ExpenseTracker({ tripId }: ExpenseTrackerProps) {
 
         {/* Totals */}
         {Object.keys(totalsByCurrency).length > 0 && (
-          <div className="flex flex-wrap gap-3">
-            {Object.entries(totalsByCurrency).map(([currency, total]) => (
-              <div key={currency} className="bg-slate-700/50 rounded-lg px-3 py-2">
-                <div className="text-xs text-slate-400">{currency}</div>
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-3">
+              {Object.entries(totalsByCurrency).map(([currency, total]) => (
+                <div key={currency} className="bg-slate-700/50 rounded-lg px-3 py-2">
+                  <div className="text-xs text-slate-400">{currency}</div>
+                  <div className="text-lg font-bold text-white">
+                    {formatAmount(total, currency)}
+                  </div>
+                  {convertedTotals[currency] && currency !== settings.defaultCurrency && (
+                    <div className="text-xs text-slate-400 mt-1">
+                      ≈ {formatAmount(convertedTotals[currency], settings.defaultCurrency)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            {/* Grand Total in Default Currency */}
+            {Object.keys(convertedTotals).length > 1 && (
+              <div className="bg-emerald-600/20 border border-emerald-600/30 rounded-lg px-3 py-2">
+                <div className="text-xs text-emerald-400">Total in {settings.defaultCurrency}</div>
                 <div className="text-lg font-bold text-white">
-                  {formatAmount(total, currency)}
+                  {isConverting ? (
+                    <span className="text-sm text-slate-400">Converting...</span>
+                  ) : (
+                    formatAmount(
+                      Object.values(convertedTotals).reduce((sum, val) => sum + val, 0),
+                      settings.defaultCurrency
+                    )
+                  )}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         )}
       </div>

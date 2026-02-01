@@ -12,6 +12,9 @@ import { TripMap } from '@/components/TripMap'
 import { WeatherWidget } from '@/components/WeatherWidget'
 import { useSettings } from '@/lib/settings-context'
 import { PlaceSearch } from '@/components/PlaceSearch'
+import { CountryInfo } from '@/components/CountryInfo'
+import { LocalTimeWidget } from '@/components/LocalTimeWidget'
+import { AttractionsDiscovery } from '@/components/AttractionsDiscovery'
 
 export default function TripDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
@@ -793,7 +796,22 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 <span className="text-xs text-slate-500">now</span>
               </div>
             )}
+
+            {/* Local Time Widget */}
+            {trip.timezone && (
+              <LocalTimeWidget 
+                timezone={trip.timezone} 
+                className="text-slate-300 bg-slate-800/50 px-3 py-1.5 rounded-lg"
+              />
+            )}
           </div>
+
+          {/* Country Info */}
+          {trip.destination && (
+            <div className="mt-4 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+              <CountryInfo destination={trip.destination} showDetailed={false} />
+            </div>
+          )}
 
           {/* Trip Info Row: Category, Duration, Timezone Diff, Sunrise/Sunset */}
           <div className="mt-3 flex flex-wrap items-center gap-3">
@@ -1194,6 +1212,16 @@ export default function TripDetailPage({ params }: { params: Promise<{ id: strin
                 />
               </div>
             </div>
+          )}
+
+          {/* Attractions Discovery */}
+          {trip.latitude && trip.longitude && (
+            <AttractionsDiscovery 
+              lat={trip.latitude}
+              lon={trip.longitude}
+              tripName={trip.name}
+              className="mt-6"
+            />
           )}
 
         </div>
